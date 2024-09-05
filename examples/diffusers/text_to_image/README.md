@@ -15,6 +15,9 @@ Before running the scripts, make sure to install the library's training dependen
 
 **Important**
 
+The training script is compute-intensive and only runs on an Ascend 910*. Please run the scripts with CANN version ([CANN 7.3.0.1.231](https://www.hiascend.com/developer/download/community/result?module=cann&cann=8.0.RC2.beta1)) and MindSpore version ([MS2.3.0](https://www.mindspore.cn/versions#2.3.0)); You can use
+`cat {cann-install-path}/latest/version.cfg` check the CANN version. The cann-install-path indicates the installation path of CANN.
+
 To make sure you can successfully run the latest versions of the example scripts, we highly recommend **installing from source** and keeping the install up to date as we update the example scripts frequently and install some example-specific requirements. To do this, execute the following steps in a new virtual environment:
 ```bash
 git clone https://github.com/mindspore-lab/mindone
@@ -85,6 +88,17 @@ python train_text_to_image.py \
   --lr_scheduler="constant" --lr_warmup_steps=0 \
   --output_dir="sd-your-dataset-model-$(date +%Y%m%d%H%M%S)"
 ```
+### Performance
+
+For the above training example, we record the training speed as follows.
+
+| NPUs | Global Batch size | Resolution   | Precision | Speed (s/step) | FPS (img/s) |
+|------|-------------------|--------------|-----------|----------------|-------------|
+| 1    | 1*1               | 512x512      | BF16      |                |             |
+| 1    | 1*1               | 512x512      | FP16      |                |             |
+| 8    | 1*8               | 512x512      | BF16      |                |             |
+| 8    | 1*8               | 512x512      | FP16      |                |             |
+
 
 Once the training is finished the model will be saved in the `output_dir` specified in the command. In this example it's `sd-onepiece-model`. To load the fine-tuned model for inference just pass that path to `StableDiffusionPipeline`
 
