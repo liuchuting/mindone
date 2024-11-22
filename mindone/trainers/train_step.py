@@ -4,30 +4,28 @@ from packaging import version
 
 import mindspore as ms
 import mindspore.context as context
-from mindspore import Tensor, nn, ops
+from mindspore import Tensor, nn, ops, mint
 from mindspore.boost.grad_accumulation import gradient_accumulation_op as _grad_accum_op
 from mindspore.boost.grad_accumulation import gradient_clear_op as _grad_clear_op
 from mindspore.common import RowTensor
 from mindspore.common import dtype as mstype
 from mindspore.ops import composite as C
 from mindspore.ops import functional as F
-from mindspore.ops import operations as P
 
 _grad_scale = C.MultitypeFuncGraph("grad_scale")
-reciprocal = P.Reciprocal()
 _grad_overflow = C.MultitypeFuncGraph("_grad_overflow")
 
 
 @_grad_scale.register("Tensor", "Tensor")
 def tensor_grad_scale(scale, grad):
-    return grad * F.cast(reciprocal(scale), F.dtype(grad))
+    return grad * F.cast(mint.reciprocal(scale), F.dtype(grad))
 
 
 @_grad_scale.register("Tensor", "RowTensor")
 def tensor_grad_scale_row_tensor(scale, grad):
     return RowTensor(
         grad.indices,
-        grad.values * F.cast(reciprocal(scale), F.dtype(grad.values)),
+        grad.values * F.cast(mint.reciprocal(scale), F.dtype(grad.values)),
         grad.dense_shape,
     )
 
@@ -113,7 +111,7 @@ class TrainOneStepWrapper(nn.TrainOneStepWithLossScaleCell):
             else:
                 status = None
 
-        scaling_sens_filled = C.ones_like(loss) * F.cast(scaling_sens, F.dtype(loss))  # loss scale value
+        scaling_sens_filled = mint.ones_like(loss) * F.cast(scaling_sens, F.dtype(loss))  # loss scale value
 
         # 1. compute gradients (of the up-scaled loss w.r.t. the model weights)
         grads = self.grad(self.network, weights)(*inputs, scaling_sens_filled)
