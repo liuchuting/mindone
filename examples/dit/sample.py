@@ -135,7 +135,7 @@ def parse_args():
     parser.add_argument("--imagegrid", default=False, type=str2bool, help="Save the image in image-grids format.")
     parser.add_argument(
         "--jit_level",
-        default="O2",
+        default="O0",
         type=str,
         choices=["O0", "O1", "O2"],
         help="Used to control the compilation optimization level. Supports [“O0”, “O1”, “O2”]."
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     class_labels = [207, 360, 387, 974, 88, 979, 417, 279]
     # Create sampling noise:
     n = len(class_labels)
-    z = mint.randn((n, 4, latent_size, latent_size), dtype=ms.float32)
+    z = mint.randn(n, 4, latent_size, latent_size, dtype=ms.float32)
     y = Tensor(class_labels)
     y_null = mint.ones_like(y) * 1000
 

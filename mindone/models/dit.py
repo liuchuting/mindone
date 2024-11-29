@@ -177,7 +177,7 @@ class Attention(nn.Cell):
             sim += mask
 
         # use fp32 for exponential inside
-        attn = mint.softmax(sim, dim=-1).astype(v.dtype)
+        attn = mint.nn.functional.softmax(sim, dim=-1).astype(v.dtype)
         attn = self.attn_drop(attn)
 
         out = mint.matmul(attn, v)

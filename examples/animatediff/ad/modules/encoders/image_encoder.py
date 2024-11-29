@@ -224,7 +224,7 @@ class MultiheadAttention(nn.Cell):
             attn_output_weights = attn_mask + mint.matmul(att_q, att_k.transpose((0, 2, 1)))
         else:
             attn_output_weights = mint.matmul(att_q, att_k.transpose((0, 2, 1)))
-        attn_output_weights = mint.softmax(attn_output_weights, dim=-1)
+        attn_output_weights = mint.nn.functional.softmax(attn_output_weights, dim=-1)
         attn_output = mint.matmul(attn_output_weights, att_v)
         attn_output = mint.permute(attn_output, (1, 0, 2))
         attn_output = attn_output.view(len_tgt, batch_size, width)
