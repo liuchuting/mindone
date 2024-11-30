@@ -48,13 +48,11 @@ class AutoencoderKL(nn.Cell):
         self.embed_dim = embed_dim
         if colorize_nlabels is not None:
             assert type(colorize_nlabels) == int
-            self.register_buffer("colorize", ms.ops.standard_normal(3, colorize_nlabels, 1, 1))
+            self.register_buffer("colorize", mint.standard_normal(3, colorize_nlabels, 1, 1))
         if monitor is not None:
             self.monitor = monitor
         if ckpt_path is not None:
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)
-
-        self.stdnormal = ops.StandardNormal()
 
     def init_from_ckpt(self, path, ignore_keys=list()):
         sd = ms.load_checkpoint(path)["state_dict"]
@@ -78,5 +76,5 @@ class AutoencoderKL(nn.Cell):
         mean, logvar = mint.split(moments, moments.shape[1]//2, dim=1)
         logvar = ops.clip_by_value(logvar, -30.0, 20.0)
         std = mint.exp(0.5 * logvar)
-        x = mean + std * self.stdnormal(mean.shape)
+        x = mean + std * mint.standard_normal(mean.shape)
         return x
