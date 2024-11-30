@@ -229,7 +229,6 @@ class LatentDiffusion(DDPM):
         self.instantiate_cond_stage(cond_stage_config)
 
         self.clip_denoised = False
-        self.uniform_int = ops.UniformInt()
 
         self.restarted_from_ckpt = False
         if ckpt_path is not None:
@@ -367,9 +366,7 @@ class LatentDiffusion(DDPM):
         z = self.get_latents(x)
 
         # 2. sample timestep and add noise to latents
-        t = self.uniform_int(
-            (x.shape[0],), Tensor(0, dtype=mstype.int32), Tensor(self.num_timesteps, dtype=mstype.int32)
-        )
+        t = mint.randint(0, self.num_timesteps, (x.shape[0],))
         noise = mint.randn_like(z)
         noisy_latents, snr = self.add_noise(z, noise, t)
 

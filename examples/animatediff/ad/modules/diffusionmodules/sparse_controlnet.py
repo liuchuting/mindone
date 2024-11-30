@@ -630,7 +630,7 @@ class SparseControlNetModel(nn.Cell):
 
         # 6. scaling
         if self.guess_mode and not self.global_pool_conditions:
-            scales = ops.logspace(-1, 0, len(input_block_res_samples) + 1)  # 0.1 to 1.0
+            scales = mint.linspace(-1, 0, len(input_block_res_samples) + 1)  # 0.1 to 1.0
 
             scales = scales * self.conditioning_scale
             input_block_res_samples = [sample * scale for sample, scale in zip(input_block_res_samples, scales)]
@@ -773,7 +773,7 @@ class SparseCtrlUNet3D(UNet3DModel):
 
         # 3.2 scaling
         if self.controlnet.guess_mode and not self.controlnet.global_pool_conditions:
-            scales = ops.logspace(-1, 0, len(input_block_res_samples) + 1)  # 0.1 to 1.0
+            scales = mint.linspace(-1, 0, len(input_block_res_samples) + 1)  # 0.1 to 1.0
 
             scales = scales * self.controlnet.conditioning_scale
             input_block_res_samples = [sample * scale for sample, scale in zip(input_block_res_samples, scales)]

@@ -64,7 +64,7 @@ class AnimateDiffText2Video(ABC):
 
         # (b*f 4 64 64) -> (b*f 3 512 512)
         y = self.vae.decode(x / self.scale_factor)
-        y = ops.clip_by_value((y + 1.0) / 2.0, clip_value_min=0.0, clip_value_max=1.0)
+        y = mint.clamp((y + 1.0) / 2.0, min=0.0, max=1.0)
 
         # (b*f 3 H W) -> (b*f H W 3) -> (b f H W 3)
         y = mint.permute(y, (0, 2, 3, 1))

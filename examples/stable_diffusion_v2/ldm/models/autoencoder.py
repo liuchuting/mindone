@@ -73,7 +73,7 @@ class AutoencoderKL(nn.Cell):
         h = self.encoder(x)
         moments = self.quant_conv(h)
         mean, logvar = mint.split(moments, moments.shape[1]//2, dim=1)
-        logvar = ops.clip_by_value(logvar, -30.0, 20.0)
+        logvar = mint.clamp(logvar, -30.0, 20.0)
         std = mint.exp(0.5 * logvar)
         x = mean + std * mint.standard_normal(mean.shape)
         return x
@@ -83,6 +83,6 @@ class AutoencoderKL(nn.Cell):
         h = self.encoder(x)
         moments = self.quant_conv(h)
         mean, logvar = mint.split(moments, moments.shape[1]//2, dim=1)
-        logvar = ops.clip_by_value(logvar, -30.0, 20.0)
+        logvar = mint.clamp(logvar, -30.0, 20.0)
         std = mint.exp(0.5 * logvar)
         return mint.concat([mean, std], dim=1)

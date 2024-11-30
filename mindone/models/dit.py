@@ -2,7 +2,7 @@ import math
 from typing import Optional, Tuple, Type, Union
 
 import mindspore as ms
-from mindspore import Parameter, Tensor, nn, ops, mint
+from mindspore import Parameter, Tensor, nn, mint
 from mindspore.common.initializer import XavierUniform, Zero, initializer
 
 from mindone.models.modules.flash_attention import FLASH_IS_AVAILABLE, MSFlashAttention

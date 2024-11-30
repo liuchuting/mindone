@@ -247,7 +247,10 @@ class CrossAttention(nn.Cell):
                 )
 
             if head_dim == self.FA_pad_head_dim:
-                out = mint.slice(out, [0, 0, 0, 0], [q_b, h, q_n, head_dim])
+                out = mint.narrow(out, 0, 0, q_b)
+                out = mint.narrow(out, 1, 0, h)
+                out = mint.narrow(out, 2, 0, q_n)
+                out = mint.narrow(out, 3, 0, head_dim)
 
             b, h, n, d = out.shape
             # reshape FA output to original attn input format, (b n s d) -> (b s n*d)
