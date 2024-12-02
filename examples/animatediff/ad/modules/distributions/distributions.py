@@ -24,5 +24,5 @@ class DiagonalGaussianDistribution(object):
         self.std = mint.exp(0.5 * self.logvar)
 
     def sample(self):
-        x = self.mean + self.std * mint.standard_normal(self.mean.shape)
+        x = self.mean + self.std * mint.randn(*self.mean.shape)
         return x

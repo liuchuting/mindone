@@ -48,7 +48,7 @@ class AutoencoderKL(nn.Cell):
         self.embed_dim = embed_dim
         if colorize_nlabels is not None:
             assert type(colorize_nlabels) == int
-            self.register_buffer("colorize", mint.standard_normal(3, colorize_nlabels, 1, 1))
+            self.register_buffer("colorize", mint.randn(3, colorize_nlabels, 1, 1))
         if monitor is not None:
             self.monitor = monitor
         if ckpt_path is not None:
@@ -76,5 +76,5 @@ class AutoencoderKL(nn.Cell):
         mean, logvar = mint.split(moments, moments.shape[1]//2, dim=1)
         logvar = mint.clamp(logvar, -30.0, 20.0)
         std = mint.exp(0.5 * logvar)
-        x = mean + std * mint.standard_normal(mean.shape)
+        x = mean + std * mint.randn(mean.shape)
         return x

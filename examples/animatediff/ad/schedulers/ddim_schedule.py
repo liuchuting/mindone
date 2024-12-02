@@ -283,7 +283,7 @@ class DDIMScheduler(nn.Cell):
         if self.eta > 0:
             variance_noise = self.variance_noise
             if variance_noise is None:
-                variance_noise = mint.standard_normal(model_output.shape).astype(model_output.dtype)
+                variance_noise = mint.randn(*model_output.shape).astype(model_output.dtype)
             variance = std_dev_t * variance_noise
             prev_sample = prev_sample + variance
         return prev_sample
