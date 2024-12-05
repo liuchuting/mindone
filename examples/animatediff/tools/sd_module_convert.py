@@ -5,7 +5,7 @@ import mindspore as ms
 def convert_weight(source_fp, target_fp):
     source_data = ms.load_checkpoint(source_fp)
     target_data = []
-    for name, param in source_data.item():
+    for name, param in source_data.items():
         if 'ln_' in name or 'norm' in name:
             name = name.replace("beta", "bias").replace('gamma', 'weight')
         if "model.diffusion_model.out.0.beta" in name or 'model.diffusion_model.out.0.gamma' in name:
