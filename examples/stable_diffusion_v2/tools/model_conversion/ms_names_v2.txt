@@ -820,8 +820,8 @@ model.diffusion_model.middle_block.2.out_layers_norm.beta#(1280,)#Float32
 model.diffusion_model.middle_block.2.out_layers_norm.gamma#(1280,)#Float32
 model.diffusion_model.middle_block.2.out_layers_conv.conv.bias#(1280,)#Float32
 model.diffusion_model.middle_block.2.out_layers_conv.conv.weight#(1280, 1280, 3, 3)#Float32
-model.diffusion_model.out.0.bias#(320,)#Float32
-model.diffusion_model.out.0.weight#(320,)#Float32
+model.diffusion_model.out.0.beta#(320,)#Float32
+model.diffusion_model.out.0.gamma#(320,)#Float32
 model.diffusion_model.out.2.conv.bias#(4,)#Float32
 model.diffusion_model.out.2.conv.weight#(4, 320, 3, 3)#Float32
 model.diffusion_model.output_blocks.0.0.emb_layers.1.bias#(1280,)#Float32
