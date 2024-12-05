@@ -149,12 +149,12 @@ if __name__ == "__main__":
     src_pt_ckpt = args.src
     if args.pt_params_naming == "diffuser":
         pt_unet_names_txt = "../stable_diffusion_v2/tools/model_conversion/diffusers_unet_v2.txt"
-        pt_mm_names_txt = "../tools/torch_mm_params.txt"
+        pt_mm_names_txt = "tools/torch_mm_params.txt"
     else:
         raise ValueError(f"Torch naming method {args.pt_params_naming} is not supported.")
 
     ms_unet_names_txt = "../stable_diffusion_v2/tools/model_conversion/ms_names_v2.txt"
-    ms_mm_names_txt = "../tools/ms_mm_params.txt"
+    ms_mm_names_txt = "tools/ms_mm_params.txt"
 
     output_dir = args.target
 
