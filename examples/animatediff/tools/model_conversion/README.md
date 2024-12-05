@@ -20,7 +20,7 @@ Always backup your original weight files before any conversion.
 
 ```shell
 git clone https://github.com/mindspore-lab/mindone.git
-cd mindone/examples/stable_diffusion_v2
+cd mindone/examples/animatediff
 ```
 
 ### Example usage:
