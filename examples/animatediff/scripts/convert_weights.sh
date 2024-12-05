@@ -3,7 +3,6 @@ python tools/sd_module_convert.py -s sd_v1.5-d0ab7146.ckpt -t models/stable_diff
 
 # Convert SD dreambooth model
 wget https://civitai.com/api/download/models/78755 -P models/torch_ckpts/ --content-disposition --no-check-certificate
-cp -r ../stable_diffusion_v2/tools/model_conversion ./tools/
 python tools/model_conversion/convert_weights.py  --source models/torch_ckpts/toonyou_beta3.safetensors   --target models/dreambooth_lora/toonyou_beta3.ckpt  --model sdv1  --source_version pt
 
 wget https://civitai.com/api/download/models/130072 -P models/torch_ckpts/ --content-disposition --no-check-certificate
