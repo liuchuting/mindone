@@ -43,9 +43,11 @@ class conv_nd(nn.Cell):
         if dims == 1:
             self.conv = nn.Conv1d(*args, **kwargs)
         elif dims == 2:
-            bias = kwargs.pop("has_bias", True)
-            kwargs.pop("pad_mode", None)
-            self.conv = mint.nn.Conv2d(bias=bias, *args, **kwargs)
+            if "has_bias" in kwargs:
+                kwargs['bias'] = kwargs.pop("has_bias")  # Adapt for mint.nn.Conv2d
+            if "pad_mode" in kwargs:
+                kwargs.pop("pad_mode")  # Adapt for mint.nn.Conv2d
+            self.conv = mint.nn.Conv2d(*args, **kwargs)
         elif dims == 3:
             self.conv = nn.Conv3d(*args, **kwargs)
         else:
