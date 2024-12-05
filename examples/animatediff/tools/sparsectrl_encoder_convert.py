@@ -121,9 +121,6 @@ def convert_pt_ms_state_dict(
         else:
             raise ValueError(f"incorrect pname {pt_dict_pname}")
 
-        if 'ln_' in ms_dict_pname or 'norm' in ms_dict_pname:
-            ms_dict_pname = ms_dict_pname.replace("beta", "bias").replace('gamma', 'weight')
-
         print("PT Param Name: ", pt_dict_pname)
         print("MS Param Name: ", ms_dict_pname)
         target_data.append({"name": ms_dict_pname, "data": ms.Tensor(pt_state_dict[pt_dict_pname].detach().numpy())})
