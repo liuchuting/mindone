@@ -69,25 +69,17 @@ def load_param_into_net_with_filter(
     logger.info("Execute the process of loading parameters into net.")
     net.init_parameters_data()
     param_not_load = []
-    all_param = {}
-    for key, value in parameter_dict.items():
-        if 'ln_' in key or 'norm' in key:
-            key = key.replace('beta', 'bias').replace('gamma', 'weight')
-        if 'model.diffusion_model.out.0.beta' in key or 'model.diffusion_model.out.0.gamma' in key:
-            key = key.replace('beta', 'bias').replace('gamma', 'weight')
-        all_param[key] = value
-
-    ckpt_not_load = list(all_param.keys())
+    ckpt_not_load = list(parameter_dict.keys())
     for _, param in net.parameters_and_names():
-        if param.name in all_param:
-            new_param = copy.deepcopy(all_param[param.name])
+        if param.name in parameter_dict:
+            new_param = copy.deepcopy(parameter_dict[param.name])
             _update_param(param, new_param, strict_load)
             ckpt_not_load.remove(param.name)
         else:
             param_not_load.append(param.name)
 
     if param_not_load and not strict_load:
-        _load_dismatch_prefix_params(net, all_param, param_not_load, strict_load)
+        _load_dismatch_prefix_params(net, parameter_dict, param_not_load, strict_load)
 
     logger.info("Loading parameters into net is finished.")
     if filter:
