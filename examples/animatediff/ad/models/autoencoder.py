@@ -76,5 +76,5 @@ class AutoencoderKL(nn.Cell):
         mean, logvar = mint.split(moments, moments.shape[1]//2, dim=1)
         logvar = mint.clamp(logvar, -30.0, 20.0)
         std = mint.exp(0.5 * logvar)
-        x = mean + std * mint.randn(mean.shape)
+        x = mean + std * mint.randn(*mean.shape)
         return x
