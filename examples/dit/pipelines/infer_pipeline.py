@@ -52,7 +52,7 @@ class DiTInferPipeline:
             y: (b H W 3), batch of images, normalized to [0, 1]
         """
         y = self.vae.decode(x / self.scale_factor)
-        y = ops.clip_by_value((y + 1.0) / 2.0, clip_value_min=0.0, clip_value_max=1.0)
+        y = mint.clamp((y + 1.0) / 2.0, min=0.0, max=1.0)
 
         # (b 3 H W) -> (b H W 3)
         y = mint.permute(y, (0, 2, 3, 1))

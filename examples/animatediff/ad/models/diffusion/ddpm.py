@@ -22,12 +22,31 @@ from ad.modules.diffusionmodules.util import make_beta_schedule
 import mindspore as ms
 from mindspore import Parameter, Tensor
 from mindspore import dtype as mstype
-from mindspore import nn, ops, mint
+from mindspore import nn, ops, mint, _no_grad, jit_class
 
 from mindone.utils.config import instantiate_from_config
 from mindone.utils.misc import default, exists, extract_into_tensor
 
 _logger = logging.getLogger(__name__)
+
+
+@jit_class
+class no_grad(_no_grad):
+    """
+    A context manager that suppresses gradient memory allocation in PyNative mode.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._pynative = ms.get_context("mode") == ms.PYNATIVE_MODE
+
+    def __enter__(self):
+        if self._pynative:
+            super().__enter__()
+
+    def __exit__(self, *args):
+        if self._pynative:
+            super().__exit__(*args)
 
 
 class DDPM(nn.Cell):
@@ -361,17 +380,16 @@ class LatentDiffusion(DDPM):
             - assume unet3d input/output shape: (b c f h w)
                 unet2d input/output shape: (b c h w)
         """
+        with no_grad():
+            # 1. get image/video latents z using vae
+            z = self.get_latents(x)
+            # 2. get condition embeddings
+            cond = self.get_condition_embeddings(text_tokens, control)
 
-        # 1. get image/video latents z using vae
-        z = self.get_latents(x)
-
-        # 2. sample timestep and add noise to latents
+        # 3. sample timestep and add noise to latents
         t = mint.randint(0, self.num_timesteps, (x.shape[0],))
         noise = mint.randn_like(z)
         noisy_latents, snr = self.add_noise(z, noise, t)
-
-        # 3. get condition embeddings
-        cond = self.get_condition_embeddings(text_tokens, control)
 
         # 4.  unet forward, predict conditioned on conditions
         model_output = self.apply_model(

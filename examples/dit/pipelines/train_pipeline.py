@@ -4,8 +4,26 @@ from diffusion import SpacedDiffusion
 from diffusion.diffusion_utils import _extract_into_tensor, discretized_gaussian_log_likelihood, mean_flat, normal_kl
 
 import mindspore as ms
-from mindspore import nn, ops, mint
+from mindspore import nn, ops, mint, _no_grad, jit_class
 
+
+@jit_class
+class no_grad(_no_grad):
+    """
+    A context manager that suppresses gradient memory allocation in PyNative mode.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._pynative = ms.get_context("mode") == ms.PYNATIVE_MODE
+
+    def __enter__(self):
+        if self._pynative:
+            super().__enter__()
+
+    def __exit__(self, *args):
+        if self._pynative:
+            super().__exit__(*args)
 
 class NetworkWithLoss(nn.Cell):
     def __init__(
@@ -74,13 +92,14 @@ class NetworkWithLoss(nn.Cell):
             - inputs should matches dataloder output order
             - assume input/output shape: (b c h w)
         """
-        # 1. get image/video latents z using vae
-        x = self.get_latents(x)
-        # 2. get conditions
-        if self.condition == "text":
-            text_embed = self.get_condition_embeddings(text_tokens)
-        else:
-            text_embed = None
+        with no_grad():
+            # 1. get image/video latents z using vae
+            x = self.get_latents(x)
+            # 2. get conditions
+            if self.condition == "text":
+                text_embed = self.get_condition_embeddings(text_tokens)
+            else:
+                text_embed = None
 
         if self.condition == "class":
             y = labels
