@@ -8,7 +8,7 @@ import numpy as np
 from ldm.models.autoencoder import AutoencoderKL as AutoencoderKL_SD
 
 import mindspore as ms
-from mindspore import mint, nn
+from mindspore import mint, nn, ops
 
 __all__ = ["AutoencoderKL", "get_first_stage_encoding"]
 
@@ -58,7 +58,7 @@ class DiagonalGaussianDistribution(nn.Cell):
             self.var = self.std = mint.zeros_like(self.mean)
 
     def sample(self):
-        x = self.mean + self.std * mint.randn(self.mean.shape)
+        x = self.mean + self.std * ops.randn(self.mean.shape)
         return x
 
     def kl(self, other=None):

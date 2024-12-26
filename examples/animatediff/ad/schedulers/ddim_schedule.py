@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 
 import mindspore as ms
-from mindspore import mint, nn
+from mindspore import mint, nn, ops
 
 
 def betas_for_alpha_bar(num_diffusion_timesteps, max_beta=0.999, alpha_transform_type="cosine"):
@@ -283,7 +283,7 @@ class DDIMScheduler(nn.Cell):
         if self.eta > 0:
             variance_noise = self.variance_noise
             if variance_noise is None:
-                variance_noise = mint.randn(*model_output.shape).astype(model_output.dtype)
+                variance_noise = ops.standard_normal(model_output.shape).astype(model_output.dtype)
             variance = std_dev_t * variance_noise
             prev_sample = prev_sample + variance
         return prev_sample

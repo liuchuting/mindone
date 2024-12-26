@@ -131,8 +131,8 @@ class NetworkWithLoss(nn.Cell):
         return vb
 
     def compute_loss(self, x, y, text_embed):
-        t = mint.randint(0, self.diffusion.num_timesteps, (x.shape[0],))
-        noise = mint.randn_like(x)
+        t = ops.randint(0, self.diffusion.num_timesteps, (x.shape[0],))
+        noise = ops.randn_like(x)
         x_t = self.diffusion.q_sample(x, t, noise=noise)
         model_output = self.apply_model(x_t, t, y=y, text_embed=text_embed)
 

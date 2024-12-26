@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ============================================================================
-from mindspore import mint
+from mindspore import mint, ops
 
 
 class DiagonalGaussianDistribution(object):
@@ -20,8 +20,9 @@ class DiagonalGaussianDistribution(object):
         self.mean, self.logvar = mint.split(parameters, parameters.shape[1] // 2, dim=1)
         self.logvar = mint.clamp(self.logvar, -30.0, 20.0)
         self.deterministic = deterministic
+        self.stdnormal = ops.StandardNormal()
         self.std = mint.exp(0.5 * self.logvar)
 
     def sample(self):
-        x = self.mean + self.std * mint.randn(*self.mean.shape)
+        x = self.mean + self.std * self.stdnormal(self.mean.shape)
         return x

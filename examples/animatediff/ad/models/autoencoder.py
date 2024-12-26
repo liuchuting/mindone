@@ -16,7 +16,7 @@ from ad.modules.diffusionmodules.model import Decoder, Encoder
 
 import mindspore as ms
 import mindspore.nn as nn
-from mindspore import mint
+from mindspore import mint, ops
 
 
 class AutoencoderKL(nn.Cell):
@@ -44,11 +44,12 @@ class AutoencoderKL(nn.Cell):
         self.embed_dim = embed_dim
         if colorize_nlabels is not None:
             assert type(colorize_nlabels) == int
-            self.register_buffer("colorize", mint.randn(3, colorize_nlabels, 1, 1))
+            self.register_buffer("colorize", ms.ops.standard_normal(3, colorize_nlabels, 1, 1))
         if monitor is not None:
             self.monitor = monitor
         if ckpt_path is not None:
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)
+        self.stdnormal = ops.StandardNormal()
 
     def init_from_ckpt(self, path, ignore_keys=list()):
         sd = ms.load_checkpoint(path)["state_dict"]
@@ -72,5 +73,5 @@ class AutoencoderKL(nn.Cell):
         mean, logvar = mint.split(moments, moments.shape[1] // 2, dim=1)
         logvar = mint.clamp(logvar, -30.0, 20.0)
         std = mint.exp(0.5 * logvar)
-        x = mean + std * mint.randn(*mean.shape)
+        x = mean + std * self.stdnormal(mean.shape)
         return x

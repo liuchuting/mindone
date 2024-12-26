@@ -105,7 +105,7 @@ class GaussianDiffusion:
         :return: A noisy version of x_start.
         """
         if noise is None:
-            noise = mint.randn_like(x_start)
+            noise = ops.randn_like(x_start)
         assert noise.shape == x_start.shape
         return (
             _extract_into_tensor(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start
@@ -353,7 +353,7 @@ class GaussianDiffusion:
         if noise is not None:
             img = noise
         else:
-            img = mint.randn(*shape)
+            img = ops.randn(*shape)
         indices = list(range(self.num_timesteps))[::-1]
 
         if progress:
@@ -506,7 +506,7 @@ class GaussianDiffusion:
         if noise is not None:
             img = noise
         else:
-            img = mint.randn(
+            img = ops.randn(
                 *shape,
             )
         indices = list(range(self.num_timesteps))[::-1]
@@ -574,7 +574,7 @@ class GaussianDiffusion:
         if model_kwargs is None:
             model_kwargs = {}
         if noise is None:
-            noise = mint.randn_like(x_start)
+            noise = ops.randn_like(x_start)
         x_t = self.q_sample(x_start, t, noise=noise)
         if x_t.dim() == 4:
             B, C = x_t.shape[:2]

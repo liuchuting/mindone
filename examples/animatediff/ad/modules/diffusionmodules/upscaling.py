@@ -5,7 +5,7 @@ from ad.modules.diffusionmodules.util import make_beta_schedule
 
 import mindspore as ms
 import mindspore.nn as nn
-from mindspore import Tensor, mint
+from mindspore import Tensor, mint, ops
 
 from mindone.utils.misc import extract_into_tensor
 
@@ -48,7 +48,7 @@ class AbstractLowScaleModel(nn.Cell):
 
     def q_sample(self, x_start, t, noise=None):
         if noise is None:
-            noise = mint.randn_like(x_start)
+            noise = ops.randn_like(x_start)
 
         return (
             extract_into_tensor(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start

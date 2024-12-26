@@ -2,7 +2,7 @@ import math
 from typing import Optional, Tuple, Type, Union
 
 import mindspore as ms
-from mindspore import Parameter, Tensor, mint, nn
+from mindspore import Parameter, Tensor, mint, nn, ops
 from mindspore.common.initializer import XavierUniform, Zero, initializer
 
 from mindone.models.modules.flash_attention import FLASH_IS_AVAILABLE, MSFlashAttention
@@ -377,7 +377,7 @@ class LabelEmbedder(nn.Cell):
         Drops labels to enable classifier-free guidance.
         """
         if force_drop_ids is None:
-            drop_ids = mint.rand(labels.shape[0]) < self.dropout_prob
+            drop_ids = ops.rand(labels.shape[0]) < self.dropout_prob
         else:
             drop_ids = force_drop_ids == 1
         labels = mint.where(drop_ids, self.num_classes, labels)
@@ -668,4 +668,4 @@ DiT_models = {
 if __name__ == "__main__":
     ms.set_context(mode=ms.GRAPH_MODE)
     model = DiT_S_2(input_size=32, block_kwargs={"enable_flash_attention": True})
-    print(model(mint.randn(2, 4, 32, 32), mint.randint(0, 50, (2,)), mint.arange(2)))
+    print(model(ops.randn(2, 4, 32, 32), ops.randint(0, 50, (2,)), mint.arange(2)))

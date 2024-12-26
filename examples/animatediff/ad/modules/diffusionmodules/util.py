@@ -233,7 +233,7 @@ def make_ddim_sampling_parameters(alphacums, ddim_timesteps, eta=0.0, verbose=Fa
 
 def noise_like(shape, repeat=False):
     if not repeat:
-        return mint.randn(*shape)
+        return ms.ops.StandardNormal()(shape)
     else:
         raise ValueError("The repeat method is not supported")
 
