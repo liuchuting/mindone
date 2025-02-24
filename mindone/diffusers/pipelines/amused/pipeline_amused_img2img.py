@@ -45,7 +45,7 @@ EXAMPLE_DOC_STRING = """
         ...     .resize((512, 512))
         ...     .convert("RGB")
         ... )
-        >>> image = pipe(prompt, input_image).images[0]
+        >>> image = pipe(prompt, input_image).[0][0]
         ```
 """
 

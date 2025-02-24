@@ -11,6 +11,10 @@ _import_structure = {
         "AnimateDiffSparseControlNetPipeline",
         "AnimateDiffVideoToVideoPipeline",
     ],
+    "amused":["AmusedPipeline",
+              "AmusedImg2ImgPipeline",
+              "AmusedInpaintPipeline"
+    ],
     "aura_flow": ["AuraFlowPipeline"],
     "auto_pipeline": [
         "AutoPipelineForImage2Image",
@@ -171,6 +175,11 @@ if TYPE_CHECKING:
         AnimateDiffSDXLPipeline,
         AnimateDiffSparseControlNetPipeline,
         AnimateDiffVideoToVideoPipeline,
+    )
+    from .amused import (
+        AmusedPipeline,
+        AmusedImg2ImgPipeline,
+        AmusedInpaintPipeline
     )
     from .aura_flow import AuraFlowPipeline
     from .auto_pipeline import AutoPipelineForImage2Image, AutoPipelineForInpainting, AutoPipelineForText2Image

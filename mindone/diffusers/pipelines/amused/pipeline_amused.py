@@ -34,7 +34,7 @@ EXAMPLE_DOC_STRING = """
         >>> pipe = AmusedPipeline.from_pretrained("amused/amused-512", variant="fp16", mindspore_dtype=ms.float16)
 
         >>> prompt = "a photo of an astronaut riding a horse on mars"
-        >>> image = pipe(prompt).images[0]
+        >>> image = pipe(prompt).[0][0]
         ```
 """
 

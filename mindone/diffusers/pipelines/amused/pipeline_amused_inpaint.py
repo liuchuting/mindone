@@ -53,7 +53,7 @@ EXAMPLE_DOC_STRING = """
         ...     .resize((512, 512))
         ...     .convert("L")
         ... )
-        >>> pipe(prompt, input_image, mask).images[0].save("out.png")
+        >>> pipe(prompt, input_image, mask).[0][0].save("out.png")
         ```
 """
 

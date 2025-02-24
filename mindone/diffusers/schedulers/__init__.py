@@ -21,6 +21,7 @@ _import_structure = {
     "scheduling_ddim_inverse": ["DDIMInverseScheduler"],
     "scheduling_ddim_parallel": ["DDIMParallelScheduler"],
     "scheduling_ddim": ["DDIMScheduler"],
+    "scheduling_amused": ["AmusedScheduler"],
     "scheduling_ddim_cogvideox": ["CogVideoXDDIMScheduler"],
     "scheduling_ddpm_parallel": ["DDPMParallelScheduler"],
     "scheduling_ddpm": ["DDPMScheduler"],
@@ -57,6 +58,7 @@ if TYPE_CHECKING:
     from .scheduling_consistency_decoder import ConsistencyDecoderScheduler
     from .scheduling_consistency_models import CMStochasticIterativeScheduler
     from .scheduling_ddim import DDIMScheduler
+    from scheduling_amused import AmusedScheduler
     from .scheduling_ddim_cogvideox import CogVideoXDDIMScheduler
     from .scheduling_ddim_inverse import DDIMInverseScheduler
     from .scheduling_ddim_parallel import DDIMParallelScheduler
