@@ -120,7 +120,7 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
             ratio = (step_idx + 1) / len(self.timesteps)
 
             if self.config.masking_schedule == "cosine":
-                mask_ratio = ops.cos(ratio * math.pi / 2)
+                mask_ratio = ops.cos(ms.Tensor(ratio * math.pi / 2))
             elif self.config.masking_schedule == "linear":
                 mask_ratio = 1 - ratio
             else:
