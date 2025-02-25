@@ -35,7 +35,7 @@ def gumbel_noise(t, generator=None):
 def mask_by_random_topk(mask_len, probs, temperature=1.0, generator=None):
     confidence = ops.log(probs.clamp(1e-20)) + temperature * gumbel_noise(probs, generator=generator)
     sorted_confidence = ops.sort(confidence, axis=-1)[0].astype(ms.float16)
-    cut_off = ops.gather(sorted_confidence, mask_len[0], 1)
+    cut_off = ops.gather(sorted_confidence, mask_len[0].astype(ms.float16), 1)
     masking = confidence < cut_off
     return masking
 
