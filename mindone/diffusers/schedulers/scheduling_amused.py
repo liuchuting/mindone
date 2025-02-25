@@ -116,7 +116,7 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
             prev_sample = pred_original_sample
         else:
             seq_len = sample.shape[1]
-            step_idx = (self.timesteps == timestep).nonzero()[0][0]
+            step_idx = (self.timesteps == timestep).nonzero()[0][0].item()
             ratio = (step_idx + 1) / len(self.timesteps)
 
             if self.config.masking_schedule == "cosine":
@@ -130,9 +130,9 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
 
             mask_len = (seq_len * mask_ratio).floor()
             # do not mask more than amount previously masked
-            mask_len = ops.min(ms.Tensor([(unknown_map.sum(dim=-1, keepdim=True) - 1)[0][0], mask_len]))
+            mask_len = ops.min(ms.Tensor([(unknown_map.sum(dim=-1, keepdim=True) - 1)[0][0].item(), mask_len]))
             # mask at least one
-            mask_len = ops.max(ms.Tensor([1, mask_len[0].item()]))
+            mask_len = ops.max(ms.Tensor([1, mask_len.item()]))
 
             selected_probs = ops.gather(probs, pred_original_sample[:, :, None], -1)[:, :, 0]
             # Ignores the tokens given in the input by overwriting their confidence.
