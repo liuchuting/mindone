@@ -1,14 +1,31 @@
 import math
+import numpy as np
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
 
 import mindspore as ms
-from mindspore import ops
+from mindspore import ops, mint
 
 from ..configuration_utils import ConfigMixin, register_to_config
 from ..utils import BaseOutput
 from .scheduling_utils import SchedulerMixin
 
+_MAX_FP16 = ms.tensor(np.finfo(np.float16).max, dtype=ms.float16)
+_MAX_FP32 = ms.tensor(np.finfo(np.float32).max, dtype=ms.float32)
+_MAX_FP64 = ms.tensor(np.finfo(np.float64).max, dtype=ms.float64)
+_MAX_BF16 = ms.tensor(float.fromhex("0x1.fe00000000000p+127"), dtype=ms.bfloat16)
+
+def dtype_to_max(dtype):
+    if dtype == ms.float16:
+        return _MAX_FP16
+    if dtype == ms.float32:
+        return _MAX_FP32
+    if dtype == ms.float64:
+        return _MAX_FP64
+    if dtype == ms.bfloat16:
+        return _MAX_BF16
+    else:
+        raise ValueError(f"Only support get maximum value of (float16, ), but got {dtype}")
 
 def gumbel_noise(t, generator=None):
     noise = ops.zeros_like(t).uniform_(0, 1, generator=generator)
@@ -17,8 +34,8 @@ def gumbel_noise(t, generator=None):
 
 def mask_by_random_topk(mask_len, probs, temperature=1.0, generator=None):
     confidence = ops.log(probs.clamp(1e-20)) + temperature * gumbel_noise(probs, generator=generator)
-    sorted_confidence = ops.sort(confidence, axis=-1).values
-    cut_off = ops.gather(sorted_confidence, 1, mask_len.long())
+    sorted_confidence = ops.sort(confidence, axis=-1)
+    cut_off = ops.gather(sorted_confidence, 1, mask_len.astype(ms.int64))
     masking = confidence < cut_off
     return masking
 
@@ -60,7 +77,7 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
         num_inference_steps: int,
         temperature: Union[int, Tuple[int, int], List[int]] = (2, 0),
     ):
-        self.timesteps = ops.arange(num_inference_steps).flip(0)
+        self.timesteps = ops.arange(num_inference_steps).flip((0,))
 
         if isinstance(temperature, (tuple, list)):
             self.temperatures = ops.linspace(temperature[0], temperature[1], num_inference_steps)
@@ -85,13 +102,13 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
 
         unknown_map = sample == self.config.mask_token_id
 
-        probs = model_output.softmax(dim=-1)
+        probs = model_output.softmax(axis=-1)
 
         probs_ = probs if generator is not None else probs  # handles when generator is on CPU
         if probs_.dtype != ms.float32:
             probs_ = probs_.float()  # multinomial is not implemented for cpu half precision
-        probs_ = probs_.reshape(-1, probs.size(-1))
-        pred_original_sample = ops.multinomial(probs_, 1, generator=generator)
+        probs_ = probs_.reshape(-1, probs.shape[-1])
+        pred_original_sample = mint.multinomial(probs_, 1, generator=generator)
         pred_original_sample = pred_original_sample[:, 0].view(*probs.shape[:-1])
         pred_original_sample = ops.where(unknown_map, pred_original_sample, sample)
 
@@ -99,7 +116,7 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
             prev_sample = pred_original_sample
         else:
             seq_len = sample.shape[1]
-            step_idx = (self.timesteps == timestep).nonzero()
+            step_idx = (self.timesteps == timestep).nonzero()[0][0]
             ratio = (step_idx + 1) / len(self.timesteps)
 
             if self.config.masking_schedule == "cosine":
@@ -113,13 +130,13 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
 
             mask_len = (seq_len * mask_ratio).floor()
             # do not mask more than amount previously masked
-            mask_len = ops.min(unknown_map.sum(dim=-1, keepdim=True) - 1, mask_len)
+            mask_len = ops.min(ms.Tensor([(unknown_map.sum(dim=-1, keepdim=True) - 1)[0][0], mask_len]))
             # mask at least one
-            mask_len = ops.max(ms.Tensor([1]), mask_len)
+            mask_len = ops.max(ms.Tensor([1, mask_len[0].item()]))
 
-            selected_probs = ops.gather(probs, -1, pred_original_sample[:, :, None])[:, :, 0]
+            selected_probs = ops.gather(probs, pred_original_sample[:, :, None], -1)[:, :, 0]
             # Ignores the tokens given in the input by overwriting their confidence.
-            selected_probs = ops.where(unknown_map, selected_probs, ops.finfo(selected_probs.dtype).max)
+            selected_probs = ops.where(unknown_map, selected_probs, dtype_to_max(selected_probs.dtype))
 
             masking = mask_by_random_topk(mask_len, selected_probs, self.temperatures[step_idx], generator)
 
@@ -147,7 +164,7 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
             raise ValueError(f"unknown masking schedule {self.config.masking_schedule}")
 
         mask_indices = (
-            ops.rand(sample.shape, generator=generator)
+            mint.rand(sample.shape, generator=generator)
             < mask_ratio
         )
 

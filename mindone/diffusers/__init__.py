@@ -186,6 +186,7 @@ _import_structure = {
         "WuerstchenPriorPipeline",
     ],
     "schedulers": [
+        "AmusedScheduler",
         "ConsistencyDecoderScheduler",
         "CMStochasticIterativeScheduler",
         "CogVideoXDDIMScheduler",
@@ -402,6 +403,7 @@ if TYPE_CHECKING:
         CMStochasticIterativeScheduler,
         CogVideoXDDIMScheduler,
         CogVideoXDPMScheduler,
+        AmusedScheduler,
         ConsistencyDecoderScheduler,
         DDIMInverseScheduler,
         DDIMParallelScheduler,

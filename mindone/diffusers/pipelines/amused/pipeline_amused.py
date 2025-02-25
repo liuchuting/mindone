@@ -203,12 +203,12 @@ class AmusedPipeline(DiffusionPipeline):
                 max_length=self.tokenizer.model_max_length,
             ).input_ids
 
-            outputs = self.text_encoder(input_ids, return_dict=True, output_hidden_states=True)
+            outputs = self.text_encoder(ms.Tensor(input_ids), return_dict=True, output_hidden_states=True)
             prompt_embeds = outputs.text_embeds
             encoder_hidden_states = outputs.hidden_states[-2]
 
-        prompt_embeds = prompt_embeds.repeat(num_images_per_prompt, 1)
-        encoder_hidden_states = encoder_hidden_states.repeat(num_images_per_prompt, 1, 1)
+        prompt_embeds = prompt_embeds.tile((num_images_per_prompt, 1))
+        encoder_hidden_states = encoder_hidden_states.tile((num_images_per_prompt, 1, 1))
 
         if guidance_scale > 1.0:
             if negative_prompt_embeds is None:
@@ -226,12 +226,12 @@ class AmusedPipeline(DiffusionPipeline):
                     max_length=self.tokenizer.model_max_length,
                 ).input_ids
 
-                outputs = self.text_encoder(input_ids, return_dict=True, output_hidden_states=True)
+                outputs = self.text_encoder(ms.Tensor(input_ids), return_dict=True, output_hidden_states=True)
                 negative_prompt_embeds = outputs.text_embeds
                 negative_encoder_hidden_states = outputs.hidden_states[-2]
 
-            negative_prompt_embeds = negative_prompt_embeds.repeat(num_images_per_prompt, 1)
-            negative_encoder_hidden_states = negative_encoder_hidden_states.repeat(num_images_per_prompt, 1, 1)
+            negative_prompt_embeds = negative_prompt_embeds.tile((num_images_per_prompt, 1))
+            negative_encoder_hidden_states = negative_encoder_hidden_states.tile((num_images_per_prompt, 1, 1))
 
             prompt_embeds = ops.concat([negative_prompt_embeds, prompt_embeds])
             encoder_hidden_states = ops.concat([negative_encoder_hidden_states, encoder_hidden_states])
@@ -249,7 +249,7 @@ class AmusedPipeline(DiffusionPipeline):
             dtype=encoder_hidden_states.dtype,
         )
         micro_conds = micro_conds.unsqueeze(0)
-        micro_conds = micro_conds.expand(2 * batch_size if guidance_scale > 1.0 else batch_size, -1)
+        micro_conds = micro_conds.broadcast_to((2 * batch_size if guidance_scale > 1.0 else batch_size, -1))
 
         shape = (batch_size, height // self.vae_scale_factor, width // self.vae_scale_factor)
 
