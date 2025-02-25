@@ -35,7 +35,7 @@ def gumbel_noise(t, generator=None):
 def mask_by_random_topk(mask_len, probs, temperature=1.0, generator=None):
     confidence = ops.log(probs.clamp(1e-20)) + temperature * gumbel_noise(probs, generator=generator)
     sorted_confidence = ops.sort(confidence, axis=-1)
-    cut_off = ops.gather(sorted_confidence, 1, mask_len.astype(ms.int64))
+    cut_off = ops.gather(sorted_confidence, mask_len[0], 1)
     masking = confidence < cut_off
     return masking
 
@@ -132,7 +132,7 @@ class AmusedScheduler(SchedulerMixin, ConfigMixin):
             # do not mask more than amount previously masked
             mask_len = ops.min(ms.Tensor([(unknown_map.sum(dim=-1, keepdim=True) - 1)[0][0].item(), mask_len]))
             # mask at least one
-            mask_len = ops.max(ms.Tensor([1, mask_len.item()]))
+            mask_len = ops.max(ms.Tensor([1, mask_len[0]]))
 
             selected_probs = ops.gather(probs, pred_original_sample[:, :, None], -1)[:, :, 0]
             # Ignores the tokens given in the input by overwriting their confidence.
