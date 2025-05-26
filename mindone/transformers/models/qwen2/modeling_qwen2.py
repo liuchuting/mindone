@@ -43,7 +43,7 @@ from mindone.transformers.modeling_outputs import (
 )
 from mindone.transformers.modeling_rope_utils import ROPE_INIT_FUNCTIONS
 from mindone.transformers.modeling_utils import MSPreTrainedModel
-
+from ...integrations.flash_attention import flash_attention_forward
 logger = logging.get_logger(__name__)
 
 
@@ -360,6 +360,72 @@ class Qwen2Attention(nn.Cell):
         return attn_output, attn_weights, past_key_value
 
 
+class Qwen2FlashAttention2(Qwen2Attention):
+    """
+    Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
+    and "Generating Long Sequences with Sparse Transformers".
+    """
+
+    def __init__(self, config: Qwen2Config, layer_idx: Optional[int] = None):
+        super().__init__(config, layer_idx)
+        self.scale = self.head_dim**-0.5
+
+    def construct(
+        self,
+        hidden_states: ms.Tensor,
+        attention_mask: Optional[ms.Tensor] = None,
+        position_ids: Optional[ms.Tensor] = None,
+        past_key_value: Optional[Cache] = None,
+        output_attentions: bool = False,
+        use_cache: bool = False,
+        cache_position: Optional[ms.Tensor] = None,
+    ) -> Tuple[ms.Tensor, Optional[ms.Tensor], Optional[Tuple[ms.Tensor]]]:
+        bsz, q_len, _ = hidden_states.shape
+
+        query_states = self.q_proj(hidden_states)
+        key_states = self.k_proj(hidden_states)
+        value_states = self.v_proj(hidden_states)
+
+        query_states = query_states.view(bsz, q_len, self.num_heads, self.head_dim).swapaxes(1, 2)
+        key_states = key_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).swapaxes(1, 2)
+        value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).swapaxes(1, 2)
+
+        kv_seq_len = key_states.shape[-2]  # seq/1
+        if past_key_value is not None:
+            kv_seq_len = past_key_value[0].shape[-2]  # seq
+        cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
+        query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
+
+        if past_key_value is not None:
+            key_states, value_states = update(past_key_value, key_states, value_states, cache_position)
+            past_key_value = (key_states, value_states)
+        # repeat k/v heads if n_kv_heads < n_heads
+        key_states = repeat_kv(key_states, self.num_key_value_groups)
+        value_states = repeat_kv(value_states, self.num_key_value_groups)
+
+        if self.is_causal:
+            attention_mask = mint.tril(mint.ones((query_states.shape[-2], key_states.shape[-2])))
+
+        attn_output, _ = flash_attention_forward(
+            self,
+            query_states,
+            key_states,
+            value_states,
+            attention_mask,
+            dropout=self.attention_dropout if self.training else 0.0,
+            scaling=self.scale,
+        )
+
+        attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)
+
+        attn_output = self.o_proj(attn_output)
+
+        if not output_attentions:
+            attn_weights = None
+
+        return attn_output, attn_weights, past_key_value
+
+
 class Qwen2PageAttention(Qwen2Attention):
     """
     Llama flash attention module. This module inherits from `LlamaAttention` as the weights of the module stays
@@ -432,6 +498,7 @@ class Qwen2PageAttention(Qwen2Attention):
 
 QWEN2_ATTENTION_CLASSES = {
     "eager": Qwen2Attention,
+    "flash_attention_2": Qwen2FlashAttention2,
     "paged_attention": Qwen2PageAttention,
 }
 
