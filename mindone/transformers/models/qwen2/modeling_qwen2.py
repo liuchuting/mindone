@@ -318,7 +318,10 @@ class Qwen2Attention(nn.Cell):
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
         if past_key_value is not None:
-            key_states, value_states = past_key_value.update(key_states, value_states, cache_position)
+            cache_kwargs = {
+                "cache_position": cache_position
+            }
+            key_states, value_states = past_key_value.update(key_states, value_states, self.layer_idx, cache_position)
         # repeat k/v heads if n_kv_heads < n_heads
         key_states = repeat_kv(key_states, self.num_key_value_groups)
         value_states = repeat_kv(value_states, self.num_key_value_groups)
@@ -396,7 +399,10 @@ class Qwen2FlashAttention2(Qwen2Attention):
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
         if past_key_value is not None:
-            key_states, value_states = past_key_value.update(key_states, value_states, cache_position)
+            cache_kwargs = {
+                "cache_position": cache_position
+            }
+            key_states, value_states = past_key_value.update(key_states, value_states, self.layer_idx, cache_position)
         # repeat k/v heads if n_kv_heads < n_heads
         key_states = repeat_kv(key_states, self.num_key_value_groups)
         value_states = repeat_kv(value_states, self.num_key_value_groups)
