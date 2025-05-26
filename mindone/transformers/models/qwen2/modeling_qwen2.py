@@ -318,8 +318,7 @@ class Qwen2Attention(nn.Cell):
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
         if past_key_value is not None:
-            key_states, value_states = update(past_key_value, key_states, value_states, cache_position)
-            past_key_value = (key_states, value_states)
+            key_states, value_states = past_key_value.update(key_states, value_states, cache_position)
         # repeat k/v heads if n_kv_heads < n_heads
         key_states = repeat_kv(key_states, self.num_key_value_groups)
         value_states = repeat_kv(value_states, self.num_key_value_groups)
@@ -397,8 +396,7 @@ class Qwen2FlashAttention2(Qwen2Attention):
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
         if past_key_value is not None:
-            key_states, value_states = update(past_key_value, key_states, value_states, cache_position)
-            past_key_value = (key_states, value_states)
+            key_states, value_states = past_key_value.update(key_states, value_states, cache_position)
         # repeat k/v heads if n_kv_heads < n_heads
         key_states = repeat_kv(key_states, self.num_key_value_groups)
         value_states = repeat_kv(value_states, self.num_key_value_groups)
@@ -632,6 +630,7 @@ class Qwen2PreTrainedModel(MSPreTrainedModel):
     _supports_flash_attn_2 = True
     _supports_sdpa = True
     _supports_cache_class = False  # FIXME
+    _supports_dynamic_input = True
 
     def _init_weights(self, module):
         # std = self.config.initializer_range
@@ -831,7 +830,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
             hidden_states = layer_outputs[0]
 
             if use_cache:
-                next_caches += (layer_outputs[2 if output_attentions else 1],)
+                next_caches = layer_outputs[2 if output_attentions else 1]
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
 
