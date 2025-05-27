@@ -280,14 +280,12 @@ class Qwen2Attention(nn.Cell):
         self.k_proj = nn.Dense(self.hidden_size, self.num_key_value_heads * self.head_dim, has_bias=True)
         self.v_proj = nn.Dense(self.hidden_size, self.num_key_value_heads * self.head_dim, has_bias=True)
         self.o_proj = nn.Dense(self.num_heads * self.head_dim, self.hidden_size, has_bias=False)
-
-        self.rotary_emb = Qwen2RotaryEmbedding(config)
-
         self.scale = self.head_dim**-0.5
 
     def construct(
         self,
         hidden_states: ms.Tensor,
+        position_embeddings,
         attention_mask: Optional[ms.Tensor] = None,
         position_ids: Optional[ms.Tensor] = None,
         past_key_value: Optional[Cache] = None,
@@ -306,7 +304,7 @@ class Qwen2Attention(nn.Cell):
         value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).swapaxes(1, 2)
 
         kv_seq_len = key_states.shape[-2]  # seq/1
-        cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
+        cos, sin = position_embeddings
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
         if past_key_value is not None:
@@ -365,6 +363,7 @@ class Qwen2FlashAttention2(Qwen2Attention):
     def construct(
         self,
         hidden_states: ms.Tensor,
+        position_embeddings,
         attention_mask: Optional[ms.Tensor] = None,
         position_ids: Optional[ms.Tensor] = None,
         past_key_value: Optional[Cache] = None,
@@ -383,7 +382,7 @@ class Qwen2FlashAttention2(Qwen2Attention):
         value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).swapaxes(1, 2)
 
         kv_seq_len = key_states.shape[-2]  # seq/1
-        cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
+        cos, sin = position_embeddings
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
         if past_key_value is not None:
@@ -450,6 +449,7 @@ class Qwen2PageAttention(Qwen2Attention):
     def construct(
         self,
         hidden_states: ms.Tensor,
+        position_embeddings,
         attention_mask: Optional[ms.Tensor] = None,
         position_ids: Optional[ms.Tensor] = None,
         past_key_value: Optional[Tuple[ms.Tensor, ms.Tensor]] = None,
@@ -515,6 +515,7 @@ class Qwen2DecoderLayer(nn.Cell):
     def construct(
         self,
         hidden_states: ms.Tensor,
+        position_embeddings,
         attention_mask: Optional[ms.Tensor] = None,
         position_ids: Optional[ms.Tensor] = None,
         past_key_value: Optional[Tuple[ms.Tensor]] = None,
@@ -555,6 +556,7 @@ class Qwen2DecoderLayer(nn.Cell):
         if block_tables is None:
             hidden_states, self_attn_weights, present_key_value = self.self_attn(
                 hidden_states=hidden_states,
+                position_embeddings=position_embeddings,
                 attention_mask=attention_mask,
                 position_ids=position_ids,
                 past_key_value=past_key_value,
@@ -565,6 +567,7 @@ class Qwen2DecoderLayer(nn.Cell):
         else:
             hidden_states, self_attn_weights, present_key_value = self.self_attn(
                 hidden_states=hidden_states,
+                position_embeddings=position_embeddings,
                 attention_mask=attention_mask,
                 position_ids=position_ids,
                 past_key_value=past_key_value,
@@ -730,6 +733,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
         )
         self._attn_implementation = config._attn_implementation
         self.norm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.rotary_emb = Qwen2RotaryEmbedding(config)
 
         if self.config._attn_implementation == "paged_attention":
             self.is_first_iteration = True
@@ -809,6 +813,8 @@ class Qwen2Model(Qwen2PreTrainedModel):
 
         hidden_states = inputs_embeds
 
+        position_embeddings = self.rotary_emb(hidden_states, position_ids)
+
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
@@ -820,6 +826,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
 
             layer_outputs = decoder_layer(
                 hidden_states,
+                position_embeddings,
                 attention_mask=causal_mask,
                 position_ids=position_ids,
                 past_key_value=past_key_values,
