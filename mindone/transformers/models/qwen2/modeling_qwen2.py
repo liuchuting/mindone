@@ -141,42 +141,33 @@ class Qwen2RMSNorm(nn.Cell):
 
 # Copied from transformers.models.mixtral.modeling_mixtral.MixtralRotaryEmbedding with Mixtral->Qwen2
 class Qwen2RotaryEmbedding(nn.Cell):
-    def __init__(self, config: Qwen2Config, device=None):
+    def __init__(self, config: Qwen2Config):
         super().__init__()
-
         # BC: "rope_type" was originally "type"
         if hasattr(config, "rope_scaling") and config.rope_scaling is not None:
-            rope_type = config.rope_scaling.get("rope_type", config.rope_scaling.get("type"))
+            self.rope_type = config.rope_scaling.get("rope_type", config.rope_scaling.get("type"))
         else:
-            rope_type = "default"
+            self.rope_type = "default"
+        self.max_seq_len_cached = config.max_position_embeddings
+        self.original_max_seq_len = config.max_position_embeddings
 
-        rope_init_fn = ROPE_INIT_FUNCTIONS[rope_type]
+        self.config = config
+        self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
 
-        inv_freq, _ = rope_init_fn(config)
-        self.inv_freq = inv_freq
-        # Build here to make `torch.jit.trace` work.
-        self._set_cos_sin_cache(seq_len=config.max_position_embeddings, dtype=ms.float32)
+        self.inv_freq, self.attention_scaling = self.rope_init_fn(self.config)
+        self.original_inv_freq = self.inv_freq
 
-    def _set_cos_sin_cache(self, seq_len, dtype):
-        self.max_seq_len_cached = seq_len
-        t = ops.arange(self.max_seq_len_cached, dtype=ms.int64).type_as(self.inv_freq)
-
-        freqs = ops.outer(t, self.inv_freq)
-        # Different from paper, but it uses a different permutation in order to obtain the same calculation
-        emb = ops.cat((freqs, freqs), axis=-1)
-        self.cos_cached = emb.cos().to(dtype)
-        self.sin_cached = emb.sin().to(dtype)
-
-    def construct(self, x, seq_len=None):
+    def construct(self, x, position_ids, seq_len=None):
         # x: [bs, num_attention_heads, seq_len, head_size]
-        # if seq_len > self.max_seq_len_cached:
-        #     self._set_cos_sin_cache(seq_len=seq_len, device=None, dtype=x.dtype)
-
-        return (
-            self.cos_cached[:seq_len].to(dtype=x.dtype),
-            self.sin_cached[:seq_len].to(dtype=x.dtype),
-        )
-
+        inv_freq_expanded = self.inv_freq[None, :, None].float().broadcast_to((position_ids.shape[0], -1, 1))
+        position_ids_expanded = position_ids[:, None, :].float()
+        # Force float32 since bfloat16 loses precision on long contexts
+        # See https://github.com/huggingface/transformers/pull/29285
+        freqs = (inv_freq_expanded.float() @ position_ids_expanded.float()).swapaxes(1, 2)
+        emb = mint.cat((freqs, freqs), dim=-1)
+        cos = emb.cos()
+        sin = emb.sin()
+        return cos.to(dtype=x.dtype), sin.to(dtype=x.dtype)
 
 # Copied from transformers.models.llama.modeling_llama.rotate_half
 def rotate_half(x):
