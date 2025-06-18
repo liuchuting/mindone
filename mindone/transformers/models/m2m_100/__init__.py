@@ -1,3 +1,4 @@
+from mindspore import mint
 from typing import TYPE_CHECKING
 from ...utils import _LazyModule
 from ...utils.import_utils import define_import_structure

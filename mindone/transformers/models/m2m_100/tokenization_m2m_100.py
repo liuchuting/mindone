@@ -1,3 +1,4 @@
+from mindspore import mint
 """Tokenization classes for M2M100."""
 import json
 import os

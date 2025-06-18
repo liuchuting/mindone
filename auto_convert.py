@@ -333,7 +333,6 @@ mint_nn_map = {
     "torch.nn.Module": "nn.Cell",
     "torch.nn.ModuleList": "nn.CellList",
     "torch.nn.Flatten": "nn.Flatten",
-    "torch.nn.Parameter": "ms.Parameter",
 }
 
 ops_map = {
@@ -387,12 +386,15 @@ t2m_map = {
     "torch.complex64": "ms.complex64",
     "torch.no_grad": "ms._no_grad",
     "torch.version": "ms.version",
-    "torch.vmap": "ms.vmap"
+    "torch.vmap": "ms.vmap",
+    "torch.nn.Parameter": "ms.Parameter",
     }
 
 class TorchToMindsporeTransformer(ast.NodeTransformer):
     def __init__(self):
         self.unconverted_names: Set[str] = set()
+        self.need_mint_import: bool = True  # 👈 是否使用了 mint
+
 
     def visit_ImportFrom(self, node):
         if node.module and node.module.startswith("torch"):
@@ -429,7 +431,9 @@ class TorchToMindsporeTransformer(ast.NodeTransformer):
 
     def visit_Call(self, node):
         self.generic_visit(node)
-
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "forward":
+            if isinstance(node.func.value, ast.Call) and isinstance(node.func.value.func, ast.Name) and node.func.value.func.id == "super":
+                node.func.attr = "construct"
         # 删除 .to(device) 调用
         if isinstance(node.func, ast.Attribute) and node.func.attr == "to":
             if len(node.args) > 0 and isinstance(node.args[0], ast.Attribute) and node.args[0].attr == "device":
@@ -468,6 +472,9 @@ def convert_file(src_file: str, dst_file: str, transformer: TorchToMindsporeTran
     try:
         tree = ast.parse(source)
         tree = transformer.visit(tree)
+        if transformer.need_mint_import:
+            import_node = ast.ImportFrom(module="mindspore", names=[ast.alias(name="mint", asname=None)], level=0)
+            tree.body.insert(0, import_node)
         new_code = astor.to_source(tree)
         with open(dst_file, "w", encoding="utf-8") as f:
             f.write(new_code)

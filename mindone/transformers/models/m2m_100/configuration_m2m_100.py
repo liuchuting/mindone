@@ -1,3 +1,4 @@
+from mindspore import mint
 """M2M100 model configuration"""
 from collections import OrderedDict
 from typing import Any, Mapping, Optional
