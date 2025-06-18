@@ -445,10 +445,40 @@ class TorchToMindsporeTransformer(ast.NodeTransformer):
         if isinstance(node.func, ast.Attribute) and node.func.attr == "forward":
             if isinstance(node.func.value, ast.Call) and isinstance(node.func.value.func, ast.Name) and node.func.value.func.id == "super":
                 node.func.attr = "construct"
-        # 删除 .to(device) 调用
+
+        # 处理 .to(...) 调用
         if isinstance(node.func, ast.Attribute) and node.func.attr == "to":
-            if len(node.args) > 0 and isinstance(node.args[0], ast.Attribute) and node.args[0].attr == "device":
+            # 情况1: .to(device) / .to(xxx.device) → 删除整个调用
+            if node.args and isinstance(node.args[0], ast.Attribute) and node.args[0].attr == "device":
                 return node.func.value
+
+            # 情况2: 关键词参数 device=xxx.device
+            new_keywords = [
+                kw for kw in node.keywords
+                if not (kw.arg == "device" and isinstance(kw.value, ast.Attribute) and kw.value.attr == "device")
+            ]
+
+            # 如果删掉后没有 args 和 keywords，则直接删除调用
+            if not node.args and len(new_keywords) < len(node.keywords):
+                return node.func.value
+
+            # 否则保留调用但去掉 device keyword
+            if len(new_keywords) != len(node.keywords):
+                node = ast.Call(func=node.func, args=node.args, keywords=new_keywords)
+
+        # 处理任意函数调用中的 device=xxx.device 关键词
+        node.keywords = [
+            kw for kw in node.keywords
+            if not (kw.arg == "device" and isinstance(kw.value, ast.Attribute) and kw.value.attr == "device")
+        ]
+
+        # .size() / .size(dim) → .shape / .shape[dim]
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "size":
+            if not node.args:
+                return ast.Attribute(value=node.func.value, attr="shape", ctx=ast.Load())
+            if len(node.args) == 1:
+                shape_attr = ast.Attribute(value=node.func.value, attr="shape", ctx=ast.Load())
+                return ast.Subscript(value=shape_attr, slice=node.args[0], ctx=ast.Load())
 
         return node
 
