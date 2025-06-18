@@ -389,6 +389,7 @@ t2m_map = {
     "torch.version": "ms.version",
     "torch.vmap": "ms.vmap",
     "torch.nn.Parameter": "ms.Parameter",
+    "torch.from_numpy": "ms.Tensor.from_numpy",
     }
 
 
@@ -415,7 +416,7 @@ class TorchToMindsporeTransformer(ast.NodeTransformer):
     def visit_Import(self, node):
         for alias in node.names:
             if alias.name.startswith("torch"):
-                alias.name = alias.name.replace("torch", "mindspore as ms")
+                alias.name = alias.name.replace("torch", "mindspore")
         return node
 
     def visit_Attribute(self, node):
@@ -424,6 +425,8 @@ class TorchToMindsporeTransformer(ast.NodeTransformer):
 
         if full_name in mint_nn_map:
             return ast.Name(id=mint_nn_map[full_name], ctx=node.ctx)
+        if full_name.strip("torch.") in mint_nn_map:
+            return ast.Name(id=mint_nn_map[full_name.strip("torch.")], ctx=node.ctx)
         elif full_name in mint_map:
             return ast.Name(id=mint_map[full_name], ctx=node.ctx)
         elif full_name in t2m_map:
@@ -509,12 +512,19 @@ class TorchToMindsporeTransformer(ast.NodeTransformer):
 
 def convert_file(src_file: str, dst_file: str, transformer: TorchToMindsporeTransformer):
     with open(src_file, "r", encoding="utf-8") as f:
-        source = f.read()
+        try:
+            source = f.read()
+        except Exception as e:
+            print(f"Failed to convert {src_file}: {e}")
+            return
+
     try:
         tree = ast.parse(source)
         tree = transformer.visit(tree)
         if transformer.need_mint_import:
             import_node = ast.ImportFrom(module="mindspore", names=[ast.alias(name="mint", asname=None)], level=0)
+            tree.body.insert(0, import_node)
+            import_node = ast.Import(names=[ast.alias(name="mindspore", asname="ms")])
             tree.body.insert(0, import_node)
         new_code = astor.to_source(tree)
         new_code = format_code(new_code)
