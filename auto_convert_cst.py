@@ -429,19 +429,6 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         return updated_node
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
-        if m.matches(updated_node.func, m.Attribute(attr=m.Name("to"))):
-            args = updated_node.args
-            filtered = []
-            for arg in args:
-                if arg.keyword and arg.keyword.value == "device":
-                    continue
-                if m.matches(arg.value, m.Attribute(attr=m.Name("device"))):
-                    continue
-                filtered.append(arg)
-            if not filtered:
-                return updated_node.func.value
-            return updated_node.with_changes(args=filtered)
-
         if m.matches(updated_node.func, m.Attribute(attr=m.Name("size"))):
             target = updated_node.func.value
             if not updated_node.args:
@@ -456,7 +443,13 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             if m.matches(updated_node.func.value, m.Call(func=m.Name("super"))):
                 return updated_node.with_changes(func=cst.Attribute(value=updated_node.func.value, attr=cst.Name("construct")))
 
-        return updated_node
+        new_args = [
+            arg for arg in updated_node.args
+            if not (arg.keyword and arg.keyword.value == "device")
+            and not m.matches(arg.value, m.Attribute(attr=m.Name("device")))
+        ]
+        return updated_node.with_changes(args=new_args)
+        # return updated_node
 
     def leave_Import(self, original_node: cst.Import, updated_node: cst.Import) -> cst.BaseStatement:
         new_names = []
