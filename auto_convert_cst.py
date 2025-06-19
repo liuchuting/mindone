@@ -452,15 +452,29 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         # return updated_node
 
     def leave_Import(self, original_node: cst.Import, updated_node: cst.Import) -> cst.BaseStatement:
-        new_names = []
+        new_aliases: list[cst.ImportAlias] = []
         for alias in updated_node.names:
-            if alias.name.value == "torch":
+            full_name = self._get_fullname(alias.name)
+            if full_name == "torch":
                 self.need_ms_import = True
-                new_alias = alias.with_changes(name=cst.Name("mindspore"))
-                new_names.append(new_alias)
+                new_aliases.append(
+                    cst.ImportAlias(
+                        name=cst.Name("mindspore"),
+                        asname=cst.AsName(name=cst.Name("ms"))
+                    )
+                )
+            elif full_name.startswith("torch."):
+                self.need_ms_import = True
+                new_name = full_name.replace("torch", "mindspore", 1)
+                new_aliases.append(
+                    cst.ImportAlias(name=self._str_to_attr(new_name), asname=alias.asname)
+                )
             else:
-                new_names.append(alias)
-        return updated_node.with_changes(names=new_names)
+                new_aliases.append(alias)
+
+        if not new_aliases:
+            return cst.RemoveFromParent()
+        return updated_node.with_changes(names=new_aliases)
 
     def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -> cst.BaseStatement:
         if updated_node.module is None:
@@ -480,7 +494,7 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         return updated_node.with_changes(module=new_module_expr)
 
 
-    def _map_fullname(self, name: str) -> str | None:
+    def _map_fullname(self, name: str):
         if name in mint_nn_map:
             self.need_mint_import = True
             return mint_nn_map[name]
