@@ -439,7 +439,14 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             if parent.name is original_node:
                 # 只对最末层属性做映射，避免把中间节点当作最终属性
                 # _get_fullname 返回完整链，如 torch.utils.checkpoint
+
+                # 你可以选择记录或忽略这种情况
+
                 full = self._get_fullname(updated_node)
+                # print(parent.asname)
+                if parent.asname is not None:
+                    alias_name = parent.asname.name.value  # 获取 as 后的名字，如 "nn"
+                    self.import_as_other[alias_name] = full
                 mapped = self._map_fullname(full, original_node)
                 if mapped:
                     return self._str_to_attr(mapped)
@@ -527,6 +534,9 @@ class TorchToMindsporeCST(cst.CSTTransformer):
 
     def _map_fullname(self, name: str, node):
         pos = self.get_metadata(PositionProvider, node)
+        # print(name.split(".")[0], self.import_as_other)
+        if name.split(".")[0] in self.import_as_other:
+            name = self.import_as_other[name.split(".")[0]] + "." + ".".join(name.split(".")[1:])
         if name in mint_nn_map:
             self.need_mint_import = True
             self.has_map_details.add((self.filename, pos.start.line, name))
@@ -562,17 +572,24 @@ class TorchToMindsporeCST(cst.CSTTransformer):
                 for f, l, _ in self.has_map_details
             ):
                 continue
-            if any(
-                filename == f and name == n
-                for (f, _), n in temp.items()
-            ):
-                continue
+
             if key not in temp:
                 temp[key] = name
             else:
                 if len(name) > len(temp[key]):
                     temp[key] = name
         for (filename, lineno), name in temp.items():
+            if any(
+                filename == f and name == n
+                for f, _, n in new_details
+                
+            ):
+                continue
+            if any(
+                name == full
+                for asname, full in self.import_as_other.items()
+            ):
+                continue
             new_details.add((filename, lineno, name))
         self.unmapped_details = new_details
 
