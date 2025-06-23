@@ -588,7 +588,7 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             self.has_map_details.add((self.filename, pos.start.line, name))
             self.need_ops_import = True
             return ops_map[name]
-        elif name.startswith("torch") and node:
+        elif name.startswith("torch.") and node:
             self.unmapped_details.add((self.filename, pos.start.line, name))
         return None
 
