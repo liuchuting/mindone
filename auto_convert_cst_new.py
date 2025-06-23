@@ -494,7 +494,7 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         new_aliases: list[cst.ImportAlias] = []
         for alias in updated_node.names:
             full_name = self._get_fullname(alias.name)
-            if full_name == "torch":
+            if full_name == "torch":  # import torch -> import mindspore
                 self.need_ms_import = True
                 new_aliases.append(
                     cst.ImportAlias(
@@ -503,6 +503,8 @@ class TorchToMindsporeCST(cst.CSTTransformer):
                     )
                 )
             elif full_name.startswith("torch.nn"):
+                # import torch.nn as nn -> import mindspore.mint.nn as nn
+                # import torch.nn -> import mindspore.mint.nn
                 self.need_mint_import = True
                 new_name = full_name.replace("torch.nn", "mindspore.mint.nn", 1)
                 new_aliases.append(
@@ -517,7 +519,7 @@ class TorchToMindsporeCST(cst.CSTTransformer):
 
 
     def get_importfrom_asname(self, original_node: cst.ImportFrom):
-            # 获取导入来源（如 torch.nn）
+        # 获取导入来源（如 torch.nn）
         base_module = self._get_fullname(original_node.module)
 
         for alias in original_node.names:
@@ -551,9 +553,11 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         if not module_str.startswith("torch"):
             return updated_node
         if module_str.startswith("torch.nn"):
+            # from torch.nn import xx -> from mindspore.mint.nn import xx
             new_module_str = module_str.replace("torch.nn", "mindspore.mint.nn", 1)
             self.need_mint_import = True
         elif module_str.startswith("torch"):
+            # from torch import xx -> from mindspore import xx
             new_module_str = module_str.replace("torch", "mindspore", 1)
 
         new_module_expr = self._str_to_attr(new_module_str)
@@ -565,7 +569,7 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         pos = self.get_metadata(PositionProvider, node)
         if name.split(".")[0] in self.import_as_other:
             name = self.import_as_other[name.split(".")[0]] + "." + ".".join(name.split(".")[1:])
-        if name.split(".")[0] in self.from_import_as_other:
+        if name.split(".")[0] in self.from_import_as_other: # torch.nn.functional.softmax as soft->soft()
             name = self.from_import_as_other[name.split(".")[0]] + "." + ".".join(name.split(".")[1:])
         if name in mint_nn_map:
             self.need_mint_import = True
@@ -592,23 +596,25 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         return None
 
     def _dedup_unmapped_details(self):
-        """如果某一行中有多个未映射项，只保留最长（最具体）的那个"""
         new_details = set()
         temp = {}
         for filename, lineno, name in self.unmapped_details:
             key = (filename, lineno)
+            # 同一行，已替换则跳过
             if any(
                 filename == f and lineno == l
                 for f, l, _ in self.has_map_details
             ):
                 continue
-
+            # torch.nn;torch.nn.functional;删除torch.nn
             if key not in temp:
                 temp[key] = name
             else:
                 if len(name) > len(temp[key]):
                     temp[key] = name
+        
         for (filename, lineno), name in temp.items():
+            # 文件中如过有多处同算子的替换，则跳过，避免日志爆炸
             if any(
                 filename == f and name == n
                 for f, _, n in new_details
@@ -617,12 +623,12 @@ class TorchToMindsporeCST(cst.CSTTransformer):
                 continue
             if any(
                 name in full
-                for asname, full in self.import_as_other.items()
+                for _, full in self.import_as_other.items()
             ):
                 continue
             if any(
                 name in full
-                for asname, full in self.from_import_as_other.items()
+                for _, full in self.from_import_as_other.items()
             ):
                 continue
             new_details.add((filename, lineno, name))
