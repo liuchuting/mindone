@@ -680,7 +680,7 @@ def convert_file(path: str, transformer_class):
 def copy_and_convert(src_root: str, dst_root: str):
     # transformer = ()
     if os.path.exists(dst_root):
-        shutil.rmtree(dst_root)
+        os.system(f"rm -rf {dst_root}")
     shutil.copytree(src_root, dst_root)
     print(f"Please find the following location to modify manually.")
     for dirpath, _, filenames in os.walk(dst_root):
