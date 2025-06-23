@@ -410,6 +410,7 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         self.unmapped_details: Set[Tuple[str, int, str]] = set()
         self.has_map_details: Set[Tuple[str, int, str]] = set()
         self.import_as_other = dict()
+        self.from_import_as_other = dict()
 
 
     def leave_Module(self, original_node, updated_node):
@@ -498,12 +499,13 @@ class TorchToMindsporeCST(cst.CSTTransformer):
                 new_aliases.append(
                     cst.ImportAlias(
                         name=cst.Name("mindspore"),
-                        asname=cst.AsName(name=cst.Name("ms"))
+                        # asname=cst.AsName(name=cst.Name("ms"))
                     )
                 )
-            elif full_name.startswith("torch."):
-                self.need_ms_import = True
-                new_name = full_name.replace("torch", "mindspore", 1)
+            elif full_name.startswith("torch.nn"):
+                self.need_mint_import = True
+                # print(full_name)
+                new_name = full_name.replace("torch.nn", "mindspore.mint.nn", 1)
                 new_aliases.append(
                     cst.ImportAlias(name=self._str_to_attr(new_name), asname=alias.asname)
                 )
@@ -514,6 +516,31 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             return cst.RemoveFromParent()
         return updated_node.with_changes(names=new_aliases)
 
+
+    def get_importfrom_asname(self, original_node: cst.ImportFrom):
+            # 获取导入来源（如 torch.nn）
+        base_module = self._get_fullname(original_node.module)
+
+        for alias in original_node.names:
+            if isinstance(alias, cst.ImportAlias):
+                # 获取被导入的名字（如 functional）
+                imported_name = alias.name.value if isinstance(alias.name, cst.Name) else self._get_fullname(alias.name)
+                full_name = f"{base_module}.{imported_name}"
+                if full_name.startswith("torch.") and alias.asname:
+                    asname = alias.asname.name.value
+                    skip = False
+                    for v in self.from_import_as_other.values():
+                        if full_name.startswith(v) and len(full_name) < len(v):
+                            skip = True
+                            break
+                        if v.startswith(full_name) and len(v) > len(full_name):
+                            # 移除旧的短前缀
+                            keys_to_remove = [k for k, val in self.from_import_as_other.items() if val == v]
+                            for k in keys_to_remove:
+                                del self.from_import_as_other[k]
+                    if not skip:
+                        self.from_import_as_other[asname] = full_name
+
     def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -> cst.BaseStatement:
         if updated_node.module is None:
             return updated_node
@@ -521,14 +548,14 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         module_str = self._get_fullname(updated_node.module)
         if not module_str.startswith("torch"):
             return updated_node
-
-        new_module_str = module_str.replace("torch", "mindspore", 1)
-        if new_module_str.startswith("mindspore.mint"):
+        if module_str.startswith("torch.nn"):
+            new_module_str = module_str.replace("torch.nn", "mindspore.mint.nn", 1)
             self.need_mint_import = True
-        if new_module_str.startswith("mindspore.ops"):
-            self.need_ops_import = True
+        elif module_str.startswith("torch"):
+            new_module_str = module_str.replace("torch", "mindspore", 1)
 
         new_module_expr = self._str_to_attr(new_module_str)
+        self.get_importfrom_asname(original_node)
         return updated_node.with_changes(module=new_module_expr)
 
 
@@ -537,6 +564,8 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         # print(name.split(".")[0], self.import_as_other)
         if name.split(".")[0] in self.import_as_other:
             name = self.import_as_other[name.split(".")[0]] + "." + ".".join(name.split(".")[1:])
+        if name.split(".")[0] in self.from_import_as_other:
+            name = self.from_import_as_other[name.split(".")[0]] + "." + ".".join(name.split(".")[1:])
         if name in mint_nn_map:
             self.need_mint_import = True
             self.has_map_details.add((self.filename, pos.start.line, name))
@@ -588,6 +617,11 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             if any(
                 name == full
                 for asname, full in self.import_as_other.items()
+            ):
+                continue
+            if any(
+                name == full
+                for asname, full in self.from_import_as_other.items()
             ):
                 continue
             new_details.add((filename, lineno, name))
