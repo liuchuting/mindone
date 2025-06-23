@@ -414,16 +414,16 @@ class TorchToMindsporeCST(cst.CSTTransformer):
 
 
     def leave_Module(self, original_node, updated_node):
-        # 插入必要导入
-        insert_lines = []
-        if self.need_ms_import:
-            insert_lines.append(cst.SimpleStatementLine([cst.Import(names=[cst.ImportAlias(name=cst.Name("mindspore"), asname=cst.AsName(name=cst.Name("ms")))])]))
-        if self.need_ops_import:
-            insert_lines.append(cst.SimpleStatementLine([cst.ImportFrom(module=cst.Name("mindspore"), names=[cst.ImportAlias(name=cst.Name("ops"))])]))
-        if self.need_mint_import:
-            insert_lines.append(cst.SimpleStatementLine([cst.ImportFrom(module=cst.Name("mindspore"), names=[cst.ImportAlias(name=cst.Name("mint")), cst.ImportAlias(name=cst.Name("nn"))])]))
-        if insert_lines:
-            return updated_node.with_changes(body=insert_lines + list(updated_node.body))
+        # # 插入必要导入
+        # insert_lines = []
+        # if self.need_ms_import:
+        #     insert_lines.append(cst.SimpleStatementLine([cst.Import(names=[cst.ImportAlias(name=cst.Name("mindspore"), asname=cst.AsName(name=cst.Name("ms")))])]))
+        # if self.need_ops_import:
+        #     insert_lines.append(cst.SimpleStatementLine([cst.ImportFrom(module=cst.Name("mindspore"), names=[cst.ImportAlias(name=cst.Name("ops"))])]))
+        # if self.need_mint_import:
+        #     insert_lines.append(cst.SimpleStatementLine([cst.ImportFrom(module=cst.Name("mindspore"), names=[cst.ImportAlias(name=cst.Name("mint")), cst.ImportAlias(name=cst.Name("nn"))])]))
+        # if insert_lines:
+        #     return updated_node.with_changes(body=insert_lines + list(updated_node.body))
         return updated_node
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
@@ -504,7 +504,6 @@ class TorchToMindsporeCST(cst.CSTTransformer):
                 )
             elif full_name.startswith("torch.nn"):
                 self.need_mint_import = True
-                # print(full_name)
                 new_name = full_name.replace("torch.nn", "mindspore.mint.nn", 1)
                 new_aliases.append(
                     cst.ImportAlias(name=self._str_to_attr(new_name), asname=alias.asname)
@@ -540,6 +539,9 @@ class TorchToMindsporeCST(cst.CSTTransformer):
                                 del self.from_import_as_other[k]
                     if not skip:
                         self.from_import_as_other[asname] = full_name
+                elif full_name.startswith("torch.") and not alias.asname:
+                    asname = full_name.split(".")[-1]
+                    self.from_import_as_other[asname] = full_name
 
     def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -> cst.BaseStatement:
         if updated_node.module is None:
@@ -561,7 +563,6 @@ class TorchToMindsporeCST(cst.CSTTransformer):
 
     def _map_fullname(self, name: str, node):
         pos = self.get_metadata(PositionProvider, node)
-        # print(name.split(".")[0], self.import_as_other)
         if name.split(".")[0] in self.import_as_other:
             name = self.import_as_other[name.split(".")[0]] + "." + ".".join(name.split(".")[1:])
         if name.split(".")[0] in self.from_import_as_other:
@@ -615,12 +616,12 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             ):
                 continue
             if any(
-                name == full
+                name in full
                 for asname, full in self.import_as_other.items()
             ):
                 continue
             if any(
-                name == full
+                name in full
                 for asname, full in self.from_import_as_other.items()
             ):
                 continue
