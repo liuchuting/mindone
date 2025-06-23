@@ -438,10 +438,7 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         if isinstance(parent, cst.ImportAlias):
             # 只在这个 ImportAlias 的 name 是当前节点时才处理
             if parent.name is original_node:
-                # 只对最末层属性做映射，避免把中间节点当作最终属性
                 # _get_fullname 返回完整链，如 torch.utils.checkpoint
-
-                # 你可以选择记录或忽略这种情况
 
                 full = self._get_fullname(updated_node)
                 # print(parent.asname)
@@ -682,7 +679,7 @@ def copy_and_convert(src_root: str, dst_root: str):
     if os.path.exists(dst_root):
         os.system(f"rm -rf {dst_root}")
     shutil.copytree(src_root, dst_root)
-    print(f"Please find the following location to modify manually.")
+    print(f"The following interfaces have not been replaced yet. Please modify the corresponding code based on the location indicated in the logs.")
     for dirpath, _, filenames in os.walk(dst_root):
         for filename in filenames:
             if filename.endswith(".py"):
