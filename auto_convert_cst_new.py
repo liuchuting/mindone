@@ -431,6 +431,16 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             return updated_node.with_changes(name=cst.Name("construct"))
         return updated_node
 
+    def leave_Assign(self, original_node: cst.Assign, updated_node: cst.Assign) -> cst.BaseStatement:
+        # 如果赋值左右完全一致，例如 tensor = tensor
+        if (
+            isinstance(updated_node.value, cst.Name)
+            and isinstance(updated_node.targets[0].target, cst.Name)
+            and updated_node.value.value == updated_node.targets[0].target.value
+        ):
+            return cst.RemoveFromParent()
+        return updated_node
+
     def leave_Attribute(self, original_node: cst.Attribute, updated_node: cst.Attribute) -> cst.BaseExpression:
         parent = self.get_metadata(cst.metadata.ParentNodeProvider, original_node, default=None)
 
@@ -484,6 +494,9 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             if not (arg.keyword and arg.keyword.value == "device")
             and not m.matches(arg.value, m.Attribute(attr=m.Name("device")))
         ]
+        if not new_args:
+            if isinstance(updated_node.func, cst.Attribute):
+                return updated_node.func.value
         return updated_node.with_changes(args=new_args)
         # return updated_node
 
