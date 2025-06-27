@@ -489,12 +489,14 @@ class TorchToMindsporeCST(cst.CSTTransformer):
             if m.matches(updated_node.func.value, m.Call(func=m.Name("super"))):
                 return updated_node.with_changes(func=cst.Attribute(value=updated_node.func.value, attr=cst.Name("construct")))
 
-        new_args = [
-            arg for arg in updated_node.args
-            if not (arg.keyword and arg.keyword.value == "device")
-            and not m.matches(arg.value, m.Attribute(attr=m.Name("device")))
-        ]
-        if not new_args:
+        delete_args = False
+        new_args = []
+        for arg in updated_node.args:
+            if not (arg.keyword and arg.keyword.value == "device") and not m.matches(arg.value, m.Attribute(attr=m.Name("device"))):
+                new_args.append(arg)
+            else:
+                delete_args = True
+        if not new_args and delete_args:
             if isinstance(updated_node.func, cst.Attribute):
                 return updated_node.func.value
         return updated_node.with_changes(args=new_args)
