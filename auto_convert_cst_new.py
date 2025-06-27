@@ -475,6 +475,14 @@ class TorchToMindsporeCST(cst.CSTTransformer):
         return updated_node
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
+        if m.matches(updated_node.func, m.Attribute(attr=m.Name("new_tensor"))):
+            if isinstance(updated_node.func, cst.Attribute) and isinstance(updated_node.func.value, cst.Name):
+                tensor_name = updated_node.func.value.value
+                new_func = cst.Attribute(value=cst.Name("mindspore"), attr=cst.Name("tensor"))
+                dtype_arg = cst.Arg(keyword=cst.Name("dtype"), value=cst.Attribute(value=cst.Name(tensor_name), attr=cst.Name("dtype")))
+                # print(updated_node.args, dtype_arg)
+                return cst.Call(func=new_func, args=updated_node.args + (dtype_arg, ))
+
         if m.matches(updated_node.func, m.Attribute(attr=m.Name("size"))):
             target = updated_node.func.value
             if not updated_node.args:
@@ -691,9 +699,7 @@ def convert_file(path: str, transformer_class):
 
 def copy_and_convert(src_root: str, dst_root: str):
     # transformer = ()
-    if os.path.exists(dst_root):
-        os.system(f"rm -rf {dst_root}")
-    shutil.copytree(src_root, dst_root)
+    shutil.copytree(src_root, dst_root, dirs_exist_ok=True)
     print(f"The following interfaces have not been replaced yet. Please modify the corresponding code based on the location indicated in the logs.")
     for dirpath, _, filenames in os.walk(dst_root):
         for filename in filenames:
