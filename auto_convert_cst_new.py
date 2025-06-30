@@ -337,6 +337,7 @@ mint_nn_map = {
     "torch.nn.Module": "mindspore.nn.Cell",
     "torch.nn.Sequential": "mindspore.nn.SequentialCell",
     "torch.nn.ModuleList": "mindspore.nn.CellList",
+    "torch.nn.ModuleDict": "mindspore.nn.CellDict",
     "torch.nn.Flatten": "mindspore.nn.Flatten",
 }
 
