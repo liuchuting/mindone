@@ -699,7 +699,7 @@ def convert_file(path: str, transformer_class):
 
 
 def copy_and_convert(src_root: str, dst_root: str):
-    shutil.copytree(src_root, dst_root)
+    shutil.copytree(src_root, dst_root, dirs_exist_ok=True)
     print(f"The following interfaces have not been replaced yet. Please modify the corresponding code based on the location indicated in the logs.")
     for dirpath, _, filenames in os.walk(dst_root):
         for filename in filenames:
