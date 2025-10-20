@@ -35,6 +35,7 @@ logger = logging.get_logger(__name__)
 CONFIG_MAPPING_NAMES = OrderedDict(
     [
         # Add configs here
+        ("aimv2", "Aimv2Config"),
         ("albert", "AlbertConfig"),
         ("aria", "AriaConfig"),
         ("aria_text", "AriaTextConfig"),
@@ -56,6 +57,7 @@ CONFIG_MAPPING_NAMES = OrderedDict(
         ("detr", "DetrConfig"),
         ("dinov2", "Dinov2Config"),
         ("dpt", "DPTConfig"),
+        ("efficientloftr", "EfficientLoFTRConfig"),
         ("gemma", "GemmaConfig"),
         ("granite", "GraniteConfig"),
         ("gemma2", "Gemma2Config"),
@@ -115,7 +117,8 @@ CONFIG_MAPPING_NAMES = OrderedDict(
         ("t5", "T5Config"),
         ("umt5", "UMT5Config"),
         ("vit", "ViTConfig"),
-        ("wav2vec2", "Wav2Vec2Config"),
+        ("voxtral", "VoxtralConfig"),
+        ("voxtral_encoder", "VoxtralEncoderConfig"),
         ("mvp", "MvpConfig"),
         ("whisper", "WhisperConfig"),
         ("xlm-roberta", "XLMRobertaConfig"),
@@ -128,6 +131,7 @@ CONFIG_MAPPING_NAMES = OrderedDict(
 MODEL_NAMES_MAPPING = OrderedDict(
     [
         # Add full (and cased) model names here
+        ("aimv2", "AIMv2"),
         ("albert", "ALBERT"),
         ("aria", "Aria"),
         ("aria_text", "AriaText"),
@@ -153,6 +157,7 @@ MODEL_NAMES_MAPPING = OrderedDict(
         ("detr", "DETR"),
         ("dinov2", "DINOv2"),
         ("dpt", "DPT"),
+        ("efficientloftr", "EfficientLoFTR"),
         ("gemma", "Gemma"),
         ("granite", "Granite"),
         ("gemma2", "Gemma2"),
@@ -216,6 +221,8 @@ MODEL_NAMES_MAPPING = OrderedDict(
         ("t5v1.1", "T5v1.1"),
         ("umt5", "UMT5"),
         ("vit", "ViT"),
+        ("voxtral", "Voxtral"),
+        ("voxtral_encoder", "Voxtral Encoder"),
         ("wav2vec2", "Wav2Vec2"),
         ("whisper", "Whisper"),
         ("convbert", "ConvBERT"),
@@ -275,6 +282,7 @@ SPECIAL_MODEL_TYPE_TO_MODULE_NAME = OrderedDict(
         ("smolvlm_vision", "smolvlm"),
         ("chinese_clip_vision_model", "chinese_clip"),
         ("rt_detr_resnet", "rt_detr"),
+        ("voxtral_encoder", "voxtral"),
     ]
 )
 

@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 else:
     IMAGE_PROCESSOR_MAPPING_NAMES = OrderedDict(
         [
+            ("aimv2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
             ("beit", ("BeitImageProcessor",)),
             ("blip", ("BlipImageProcessor",)),
             ("blip-2", ("BlipImageProcessor",)),
@@ -57,6 +58,7 @@ else:
             ("depth_anything", ("DPTImageProcessor",)),
             ("dinov2", ("BitImageProcessor",)),
             ("dpt", ("DPTImageProcessor",)),
+            ("efficientloftr", ("EfficientLoFTRImageProcessor",)),
             ("llava_next", ("LlavaNextImageProcessor",)),
             ("llava_next_video", ("LlavaNextVideoImageProcessor",)),
             ("llava_onevision", ("LlavaOnevisionImageProcessor",)),

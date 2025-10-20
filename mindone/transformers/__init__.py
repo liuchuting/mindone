@@ -45,6 +45,7 @@ from .image_processing_utils_fast import BaseImageProcessorFast
 from .image_utils import ImageFeatureExtractionMixin
 from .masking_utils import AttentionMaskInterface
 from .modeling_utils import MSPreTrainedModel
+from .models.aimv2 import Aimv2Model, Aimv2PreTrainedModel, Aimv2TextModel, Aimv2VisionModel
 from .models.albert import (
     AlbertForMaskedLM,
     AlbertForMultipleChoice,
@@ -303,6 +304,12 @@ from .models.deberta_v2 import (
 from .models.depth_anything import DepthAnythingForDepthEstimation, DepthAnythingPreTrainedModel
 from .models.dinov2 import Dinov2Backbone, Dinov2ForImageClassification, Dinov2Model, Dinov2PreTrainedModel
 from .models.dpt import DPTForDepthEstimation, DPTImageProcessor, DPTModel, DPTPreTrainedModel
+from .models.efficientloftr import (
+    EfficientLoFTRForKeypointMatching,
+    EfficientLoFTRImageProcessor,
+    EfficientLoFTRModel,
+    EfficientLoFTRPreTrainedModel,
+)
 from .models.fuyu import FuyuForCausalLM, FuyuPreTrainedModel
 from .models.gemma import (
     GemmaForCausalLM,
@@ -626,6 +633,7 @@ from .models.umt5 import (
 )
 from .models.vit import ViTForImageClassification, ViTForMaskedImageModeling, ViTModel, ViTPreTrainedModel
 from .models.vits import VitsModel, VitsPreTrainedModel
+from .models.voxtral import VoxtralEncoder, VoxtralForConditionalGeneration, VoxtralPreTrainedModel, VoxtralProcessor
 from .models.wav2vec2 import (
     Wav2Vec2FeatureExtractor,
     Wav2Vec2ForAudioFrameClassification,

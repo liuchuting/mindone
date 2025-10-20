@@ -18,6 +18,7 @@ import transformers
 from packaging import version
 
 from . import (
+    aimv2,
     albert,
     aria,
     auto,
@@ -39,6 +40,7 @@ from . import (
     depth_anything,
     dinov2,
     dpt,
+    efficientloftr,
     fuyu,
     gemma,
     gemma2,
@@ -91,6 +93,7 @@ from . import (
     umt5,
     vit,
     vits,
+    voxtral,
     wav2vec2,
     xlm_roberta,
 )

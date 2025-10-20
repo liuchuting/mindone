@@ -32,6 +32,7 @@ logger = logging.get_logger(__name__)
 MODEL_MAPPING_NAMES = OrderedDict(
     [
         # Base model mapping
+        ("aimv2", "Aimv2Model"),
         ("albert", "AlbertModel"),
         ("aria", "AriaForConditionalGeneration"),
         ("aria_text", "AriaTextModel"),
@@ -58,6 +59,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("detr", "DetrModel"),
         ("dinov2", "Dinov2Model"),
         ("dpt", "DPTModel"),
+        ("efficientloftr", "EfficientLoFTRModel"),
         ("gemma", "GemmaModel"),
         ("m2m_100", "M2M100Model"),
         ("gemma2", "Gemma2Model"),
@@ -110,6 +112,8 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("t5", "T5Model"),
         ("umt5", "UMT5Model"),
         ("vit", "ViTModel"),
+        ("voxtral", "VoxtralForConditionalGeneration"),
+        ("voxtral_encoder", "VoxtralEncoder"),
         ("wav2vec2", "Wav2Vec2Model"),
         ("whisper", "WhisperModel"),
         ("xlm-roberta", "XLMRobertaModel"),
@@ -144,6 +148,7 @@ MODEL_FOR_PRETRAINING_MAPPING_NAMES = OrderedDict(
         ("mpt", "MptForCausalLM"),
         ("paligemma", "PaliGemmaForConditionalGeneration"),
         ("t5", "T5ForConditionalGeneration"),
+        ("voxtral", "VoxtralForConditionalGeneration"),
         ("wav2vec2", "Wav2Vec2ForPreTraining"),
         ("xlm-roberta", "XLMRobertaForMaskedLM"),
         ("xlm-roberta-xl", "XLMRobertaXLForMaskedLM"),
@@ -415,6 +420,7 @@ MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
         ("qwen2_audio", "Qwen2AudioForConditionalGeneration"),
         ("t5", "T5ForConditionalGeneration"),
         ("umt5", "UMT5ForConditionalGeneration"),
+        ("voxtral", "VoxtralForConditionalGeneration"),
     ]
 )
 
@@ -618,7 +624,11 @@ MODEL_FOR_BACKBONE_MAPPING_NAMES = OrderedDict(
 MODEL_FOR_MASK_GENERATION_MAPPING_NAMES = OrderedDict()
 
 
-MODEL_FOR_KEYPOINT_DETECTION_MAPPING_NAMES = OrderedDict()
+MODEL_FOR_KEYPOINT_DETECTION_MAPPING_NAMES = OrderedDict(
+    [
+        ("efficientloftr", "EfficientLoFTRForKeypointMatching"),
+    ]
+)
 
 
 MODEL_FOR_TEXT_ENCODING_MAPPING_NAMES = OrderedDict(

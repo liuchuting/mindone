@@ -18,7 +18,7 @@
 import math
 from collections import OrderedDict
 
-from mindspore import Tensor, mint, nn
+from mindspore import Tensor, mint, nn, ops
 
 
 class PytorchGELUTanh(nn.Cell):
@@ -180,6 +180,17 @@ class ClassInstantier(OrderedDict):
         return cls(**kwargs)
 
 
+class LeakyReLU(nn.Cell):
+    def __init__(self, alpha=0.01):
+        """Initialize LeakyReLU."""
+        super(LeakyReLU, self).__init__()
+        self.alpha = alpha
+
+    def construct(self, x):
+        out = ops.leaky_relu(x, self.alpha)
+        return out
+
+
 ACT2CLS = {
     "gelu": mint.nn.GELU,
     "gelu_10": (ClippedGELUActivation, {"min": -10, "max": 10}),
@@ -189,7 +200,7 @@ ACT2CLS = {
     "gelu_pytorch_tanh": PytorchGELUTanh,
     "gelu_accurate": AccurateGELUActivation,
     "laplace": LaplaceActivation,
-    "leaky_relu": nn.LeakyReLU,
+    "leaky_relu": LeakyReLU,
     "linear": LinearActivation,
     "mish": MishActivation,
     "quick_gelu": QuickGELUActivation,

@@ -49,6 +49,7 @@ logger = logging.get_logger(__name__)
 
 PROCESSOR_MAPPING_NAMES = OrderedDict(
     [
+        ("aimv2", "CLIPProcessor"),
         ("blip", "BlipProcessor"),
         ("chameleon", "ChameleonProcessor"),
         ("idefics", "IdeficsProcessor"),
@@ -58,6 +59,7 @@ PROCESSOR_MAPPING_NAMES = OrderedDict(
         ("qwen3_vl", "Qwen3VLProcessor"),
         ("qwen3_vl_moe", "Qwen3VLProcessor"),
         ("siglip", "SiglipProcessor"),
+        ("voxtral", "VoxtralProcessor"),
     ]
 )
 
