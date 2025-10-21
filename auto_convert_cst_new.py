@@ -214,6 +214,7 @@ mint_map = {
 
 
 mint_nn_map = {
+    "torch.nn.Conv1d": "mindspore.mint.nn.Conv1d",
     "torch.nn.Conv2d": "mindspore.mint.nn.Conv2d",
     "torch.nn.Conv3d": "mindspore.mint.nn.Conv3d",
     "torch.nn.ConvTranspose2d": "mindspore.mint.nn.ConvTranspose2d",
